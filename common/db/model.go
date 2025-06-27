@@ -14,8 +14,8 @@ import (
 
 // Model is recommended basic fields for every table
 type Model struct {
-	CreatedAt time.Time      `json:"createdAt"`
-	UpdatedAt time.Time      `json:"updatedAt"`
+	CreatedAt time.Time      `json:"createdAt" gorm:"type:timestamptz"`
+	UpdatedAt time.Time      `json:"updatedAt" gorm:"type:timestamptz"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt"`
 }
 
@@ -34,8 +34,8 @@ func (m Model) IsDel() bool {
 
 // HardDeleteModel 适合需要硬删除的场景
 type HardDeleteModel struct {
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"createdAt" gorm:"type:timestamptz"`
+	UpdatedAt time.Time `json:"updatedAt" gorm:"type:timestamptz"`
 }
 
 func (m HardDeleteModel) HasChanged() bool {
