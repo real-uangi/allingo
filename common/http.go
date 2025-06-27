@@ -18,6 +18,7 @@ import (
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
 	"github.com/real-uangi/allingo/common/result"
+	"github.com/real-uangi/allingo/common/trace"
 	"go.uber.org/fx"
 	"net"
 	"net/http"
@@ -104,7 +105,7 @@ func ginRecover(c *gin.Context) {
 	}
 
 	actualE, isErr := err.(error)
-	httpLogger.Errorf(actualE, "HTTP请求处理异常 [%s]: %+v", c.Request.URL.Path, err)
+	httpLogger.Errorf(actualE, "HTTP请求处理异常 [%s]: %v\n%s", c.Request.URL.Path, err, trace.Stack(3))
 
 	// Check for a broken connection, as it is not really a
 	// condition that warrants a panic stack trace.
