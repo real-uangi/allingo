@@ -138,3 +138,7 @@ func ginRecover(c *gin.Context) {
 	c.AbortWithStatus(http.StatusInternalServerError)
 
 }
+
+func UsePlatformCloudflare(engine *gin.Engine) {
+	engine.TrustedPlatform = gin.PlatformCloudflare
+}
