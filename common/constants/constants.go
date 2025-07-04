@@ -8,11 +8,6 @@
 package constants
 
 const (
-	NacosAppTypeKey     = "app_type"
-	DefaultNacosAppType = "golang-antarctica"
-)
-
-const (
 	TraceIdKey    = "TRACE_ID"
 	TraceIdHeader = "TRACE-ID"
 )
@@ -39,6 +34,8 @@ const (
 	AuthInfoRedisKey   = "auth:"
 
 	LastCheckAuthHeader = "Last-Check-Auth"
+
+	ClientIpContext = "client_ip"
 )
 
 const (
@@ -49,9 +46,6 @@ const (
 const (
 	CFConnectingIpHeader = "CF-Connecting-IP"
 	CFIPCountryHeader    = "CF-IPCountry"
-
-	VerifiedRemoteIpHeader = "Verified-Remote-IP"
-	VerifiedCountryHeader  = "Verified-Country"
 
 	UserAgentHeader = "User-Agent"
 )
