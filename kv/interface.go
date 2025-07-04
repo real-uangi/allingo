@@ -9,6 +9,7 @@
 package kv
 
 import (
+	"github.com/real-uangi/allingo/common/convert"
 	"github.com/real-uangi/allingo/common/env"
 	"time"
 )
@@ -17,6 +18,8 @@ type KV interface {
 	Set(key string, value string, ttl time.Duration)
 	Get(key string) (string, bool)
 	Del(key string) error
+	SetStruct(key string, obj interface{}, ttl time.Duration) error
+	GetStruct(key string, p any) error
 }
 
 func InitKV() KV {
@@ -26,4 +29,12 @@ func InitKV() KV {
 		return newRedisKV(redisAddr, redisPassword)
 	}
 	return newLocalKV()
+}
+
+func anyToString(obj any) (string, error) {
+	return convert.Json().MarshalToString(obj)
+}
+
+func stringToAny(str string, p any) error {
+	return convert.Json().UnmarshalFromString(str, p)
 }

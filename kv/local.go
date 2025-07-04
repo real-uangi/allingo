@@ -36,6 +36,23 @@ func (kv *LocalKV) Get(key string) (string, bool) {
 	return kv.c.Get(key)
 }
 
+func (kv *LocalKV) SetStruct(key string, obj interface{}, ttl time.Duration) error {
+	str, err := anyToString(obj)
+	if err != nil {
+		return err
+	}
+	kv.Set(key, str, ttl)
+	return nil
+}
+
+func (kv *LocalKV) GetStruct(key string, p any) error {
+	str, ok := kv.Get(key)
+	if !ok {
+		return nil
+	}
+	return stringToAny(str, p)
+}
+
 func (kv *LocalKV) Del(key string) error {
 	kv.c.Del(key)
 	return nil

@@ -52,6 +52,23 @@ func (kv *RedisKV) Get(key string) (string, bool) {
 	return v, true
 }
 
+func (kv *RedisKV) SetStruct(key string, obj interface{}, ttl time.Duration) error {
+	str, err := anyToString(obj)
+	if err != nil {
+		return err
+	}
+	kv.Set(key, str, ttl)
+	return nil
+}
+
+func (kv *RedisKV) GetStruct(key string, p any) error {
+	str, ok := kv.Get(key)
+	if !ok {
+		return nil
+	}
+	return stringToAny(str, p)
+}
+
 func (kv *RedisKV) Del(key string) error {
 	return filterErr(kv.client.Del(context.Background(), key).Err())
 }
