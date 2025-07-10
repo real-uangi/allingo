@@ -11,6 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.94
 	github.com/redis/go-redis/v9 v9.10.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.39.0
