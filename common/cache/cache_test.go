@@ -43,3 +43,51 @@ func TestCache(t *testing.T) {
 	}
 
 }
+
+func TestLock(t *testing.T) {
+
+	c := New[string](500 * time.Millisecond)
+
+	start := time.Now()
+	err := c.Lock("A", "KEY-A", time.Second, time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ok := c.TryLock("A", "KEY-A", time.Second)
+	if !ok {
+		t.Log("lock is current locked, this is right")
+	} else {
+		t.Error("locking failed on previous lock")
+	}
+
+	err = c.Lock("A", "KEY-A", 10*time.Second, time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(time.Now().Sub(start).String())
+
+	err = c.Unlock("A", "KEY-A")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("unlocked at", time.Now().Sub(start).String())
+
+	err = c.Lock("A", "KEY-A", 10*time.Second, time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("locked at", time.Now().Sub(start).String())
+
+	err = c.Unlock("A", "KEY-B")
+	if err != nil {
+		t.Log("cannot unlock with wrong key, this is correct ", err)
+	}
+
+	err = c.Lock("A", "KEY-A", 10*time.Second, 20*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("locked at", time.Now().Sub(start).String())
+
+}

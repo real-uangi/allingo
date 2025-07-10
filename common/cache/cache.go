@@ -16,6 +16,7 @@ import (
 type cacheItem[T any] struct {
 	Data       T
 	Expiration int64
+	key        string
 }
 
 func newCacheItem[T any](data T, ttl time.Duration) *cacheItem[T] {
@@ -32,6 +33,9 @@ type Cache[T any] struct {
 }
 
 func New[T any](interval time.Duration) *Cache[T] {
+	if interval < time.Second {
+		interval = time.Second
+	}
 	c := &Cache[T]{
 		data:     make(map[string]*cacheItem[T]),
 		interval: interval,
@@ -51,6 +55,11 @@ func (c *Cache[T]) Get(key string) (value T, ok bool) {
 	item, ok := c.data[key]
 	c.mu.RUnlock()
 	if ok {
+		if item.Expiration < time.Now().UnixMilli() {
+			c.Del(key)
+			ok = false
+			return
+		}
 		value = item.Data
 	}
 	return

@@ -10,6 +10,9 @@ package kv
 
 import (
 	"context"
+	"errors"
+	"github.com/google/uuid"
+	"github.com/real-uangi/allingo/common/business"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
 	"github.com/redis/go-redis/v9"
@@ -78,4 +81,76 @@ func filterErr(err error) error {
 		return nil
 	}
 	return err
+}
+
+func (kv *RedisKV) GetType() Type {
+	return Redis
+}
+
+func (kv *RedisKV) TryLock(key string, parse string, ttl time.Duration) bool {
+	b, err := kv.client.SetNX(context.Background(), key, parse, ttl).Result()
+	if err = filterErr(err); err != nil {
+		kv.logger.Error(err, "error occurs when try lock")
+	}
+	return b
+}
+
+func (kv *RedisKV) Unlock(key string, parse string) (err error) {
+	script := redis.NewScript(`
+		if redis.call('get', KEYS[1]) == ARGV[1] 
+		then return redis.call('del', KEYS[1])
+		else return 0 end;
+	`)
+	keys := []string{key}
+	args := []interface{}{parse}
+	result, err := script.Run(context.Background(), kv.client, keys, args).Result()
+	if err != nil {
+		return err
+	}
+	if result.(int64) == 0 {
+		msg := "unlock failed"
+		err = errors.New(msg)
+	}
+	return
+}
+
+type RedisLock struct {
+	kv     *RedisKV
+	key    string
+	parse  string
+	locked bool
+}
+
+func (kv *RedisKV) NewLock(key string) Lock {
+	return &RedisLock{
+		kv:     kv,
+		key:    key,
+		parse:  uuid.NewString(),
+		locked: false,
+	}
+}
+
+func (lock *RedisLock) TryLock(ttl time.Duration) bool {
+	lock.locked = lock.kv.TryLock(lock.key, lock.parse, ttl)
+	return lock.locked
+}
+
+func (lock *RedisLock) Unlock() error {
+	if !lock.locked {
+		return nil
+	}
+	return lock.kv.Unlock(lock.key, lock.parse)
+}
+
+func (lock *RedisLock) Lock(ttl, maxWait time.Duration) error {
+	deadline := time.Now().Add(maxWait)
+	for {
+		if lock.TryLock(ttl) {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return business.NewError("lock timeout")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }

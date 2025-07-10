@@ -14,12 +14,27 @@ import (
 	"time"
 )
 
+type Type uint
+
+const (
+	Local Type = iota
+	Redis
+)
+
 type KV interface {
 	Set(key string, value string, ttl time.Duration)
 	Get(key string) (string, bool)
 	Del(key string) error
 	SetStruct(key string, obj interface{}, ttl time.Duration) error
 	GetStruct(key string, p any) error
+	GetType() Type
+	NewLock(key string) Lock
+}
+
+type Lock interface {
+	TryLock(ttl time.Duration) bool
+	Unlock() error
+	Lock(ttl time.Duration, maxWait time.Duration) error
 }
 
 func InitKV() KV {
