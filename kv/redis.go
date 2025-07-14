@@ -146,6 +146,7 @@ func (lock *RedisLock) Lock(ttl, maxWait time.Duration) error {
 	deadline := time.Now().Add(maxWait)
 	for {
 		if lock.TryLock(ttl) {
+			lock.locked = true
 			return nil
 		}
 		if time.Now().After(deadline) {

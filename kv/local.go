@@ -92,5 +92,10 @@ func (lock *LocalLock) Unlock() error {
 }
 
 func (lock *LocalLock) Lock(ttl, maxWait time.Duration) error {
-	return lock.kv.c.Lock(lock.key, lock.parse, ttl, maxWait)
+	err := lock.kv.c.Lock(lock.key, lock.parse, ttl, maxWait)
+	if err != nil {
+		return err
+	}
+	lock.locked = true
+	return nil
 }
