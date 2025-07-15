@@ -29,16 +29,16 @@ const (
 )
 
 type LevelInfo struct {
-	UserLevel UserLevel `json:"userLevel"`
+	Level UserLevel `json:"level"`
 }
 
 func (info *LevelInfo) IsAdmin() bool {
-	return info.UserLevel == Admin
+	return info.Level == Admin
 }
 
 // CurrentLevel 会检查有效期并返回当前实际等级
 func (info *LevelInfo) CurrentLevel() UserLevel {
-	return info.UserLevel
+	return info.Level
 }
 
 // CheckPermission 判断是否满足权限要求
