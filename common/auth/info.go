@@ -32,6 +32,12 @@ type LevelInfo struct {
 	Level UserLevel `json:"level"`
 }
 
+type LevelInfoInterface interface {
+	IsAdmin() bool
+	CurrentLevel() UserLevel
+	CheckPermission(permission UserLevel) bool
+}
+
 func (info *LevelInfo) IsAdmin() bool {
 	return info.Level == Admin
 }
@@ -46,10 +52,10 @@ func (info *LevelInfo) CheckPermission(permission UserLevel) bool {
 	return permission <= info.CurrentLevel()
 }
 
-func CurrentUser() *LevelInfo {
+func CurrentUser() LevelInfoInterface {
 	v, ok := holder.Get(constants.AuthInfoContext)
 	if !ok {
 		return nil
 	}
-	return v.(*LevelInfo)
+	return v.(LevelInfoInterface)
 }
