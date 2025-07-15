@@ -16,44 +16,40 @@ type UserLevel int
 
 const (
 	Anonymous UserLevel = iota
+
 	Peasant
+
 	User
-	PowerUser
-	EliteUser
+
+	Vip
 
 	Moderator UserLevel = 1111
 	Admin     UserLevel = 9999
 	System    UserLevel = 7777
 )
 
-type Info struct {
-	Token     string    `json:"token"`
-	UserName  string    `json:"userName"`
+type LevelInfo struct {
 	UserLevel UserLevel `json:"userLevel"`
-	UserId    string    `json:"userId"`
-	Account   string    `json:"account"`
-	Email     string    `json:"email"`
-	Sex       int8      `json:"sex"`
 }
 
-func (info *Info) IsAdmin() bool {
+func (info *LevelInfo) IsAdmin() bool {
 	return info.UserLevel == Admin
 }
 
 // CurrentLevel 会检查有效期并返回当前实际等级
-func (info *Info) CurrentLevel() UserLevel {
+func (info *LevelInfo) CurrentLevel() UserLevel {
 	return info.UserLevel
 }
 
 // CheckPermission 判断是否满足权限要求
-func (info *Info) CheckPermission(permission UserLevel) bool {
+func (info *LevelInfo) CheckPermission(permission UserLevel) bool {
 	return permission <= info.CurrentLevel()
 }
 
-func CurrentUser() *Info {
+func CurrentUser() *LevelInfo {
 	v, ok := holder.Get(constants.AuthInfoContext)
 	if !ok {
 		return nil
 	}
-	return v.(*Info)
+	return v.(*LevelInfo)
 }
