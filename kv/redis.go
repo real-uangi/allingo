@@ -37,6 +37,7 @@ func newRedisKV(addr, password string) *RedisKV {
 	return &RedisKV{
 		option: options,
 		client: redis.NewClient(options),
+		logger: log.For[RedisKV](),
 	}
 }
 
