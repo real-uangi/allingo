@@ -136,10 +136,7 @@ func (task *Task) occupy() bool {
 	}
 	if latestCounter == 0 || latestCounter == task.counter {
 		latestCounter++
-		err := task.kv.SetStruct(task.taskId, strconv.FormatInt(latestCounter, 10), 365*24*time.Hour)
-		if err != nil {
-			task.logger.Error(err, "error occurs when occupying task")
-		}
+		task.kv.Set(task.taskId, strconv.FormatInt(latestCounter, 10), 365*24*time.Hour)
 		return true
 	}
 	return false
