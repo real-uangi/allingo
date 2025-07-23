@@ -49,11 +49,15 @@ func (kv *RedisKV) Set(key string, value string, ttl time.Duration) {
 }
 
 func (kv *RedisKV) Get(key string) (string, bool) {
+	var ok bool
 	v, err := kv.client.Get(context.Background(), key).Result()
+	if err == nil {
+		ok = true
+	}
 	if err := filterErr(err); err != nil {
 		return "", false
 	}
-	return v, true
+	return v, ok
 }
 
 func (kv *RedisKV) SetStruct(key string, obj interface{}, ttl time.Duration) error {
