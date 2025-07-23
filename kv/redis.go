@@ -91,7 +91,7 @@ func (kv *RedisKV) GetType() Type {
 func (kv *RedisKV) TryLock(key string, parse string, ttl time.Duration) bool {
 	b, err := kv.client.SetNX(context.Background(), key, parse, ttl).Result()
 	if err = filterErr(err); err != nil {
-		kv.logger.Error(err, "error occurs when try lock")
+		kv.logger.Error(err, "error occurs when try lock: "+err.Error())
 	}
 	return b
 }
