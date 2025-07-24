@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/real-uangi/allingo/common/api"
+	"github.com/real-uangi/allingo/common/auth"
 	"github.com/real-uangi/allingo/common/debug"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
@@ -166,10 +167,10 @@ func initGinCheckpoint() fxtrategy.Strategy[ready.CheckPoint] {
 }
 
 func enableHealthCheckApi(engine *gin.Engine, manager *ready.Manager) {
-	engine.GET("/health", func(c *gin.Context) {
+	engine.GET("/health", auth.InternalOnlyMiddleware, func(c *gin.Context) {
 		manager.HandleHealth(c.Writer)
 	})
-	engine.GET("/health/:target", func(c *gin.Context) {
+	engine.GET("/health/:target", auth.InternalOnlyMiddleware, func(c *gin.Context) {
 		manager.HandleHealthTarget(c.Writer, c.Param("target"))
 	})
 }
