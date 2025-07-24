@@ -17,8 +17,10 @@ import (
 	"github.com/real-uangi/allingo/common/debug"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
+	"github.com/real-uangi/allingo/common/ready"
 	"github.com/real-uangi/allingo/common/result"
 	"github.com/real-uangi/allingo/common/trace"
+	"github.com/real-uangi/fxtrategy"
 	"go.uber.org/fx"
 	"net"
 	"net/http"
@@ -141,4 +143,33 @@ func ginRecover(c *gin.Context) {
 
 func UsePlatformCloudflare(engine *gin.Engine) {
 	engine.TrustedPlatform = gin.PlatformCloudflare
+}
+
+type ginCheckPoint struct {
+}
+
+func newGinCheckPoint() ready.CheckPoint {
+	return &ginCheckPoint{}
+}
+
+func (cp *ginCheckPoint) Ready() error {
+	return nil
+}
+
+func initGinCheckpoint() fxtrategy.Strategy[ready.CheckPoint] {
+	return fxtrategy.Strategy[ready.CheckPoint]{
+		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
+			Name: "gin",
+			Item: newGinCheckPoint(),
+		},
+	}
+}
+
+func enableHealthCheckApi(engine *gin.Engine, manager *ready.Manager) {
+	engine.GET("/health", func(c *gin.Context) {
+		manager.HandleHealth(c.Writer)
+	})
+	engine.GET("/health/:target", func(c *gin.Context) {
+		manager.HandleHealthTarget(c.Writer, c.Param("target"))
+	})
 }

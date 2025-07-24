@@ -10,8 +10,10 @@ package common
 
 var Provides = []interface{}{
 	initGinEngine,
+	initGinCheckpoint,
 }
 
 var Invokes = []interface{}{
 	startHttpServer,
+	enableHealthCheckApi,
 }

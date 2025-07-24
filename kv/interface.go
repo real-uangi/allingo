@@ -11,6 +11,8 @@ package kv
 import (
 	"github.com/real-uangi/allingo/common/convert"
 	"github.com/real-uangi/allingo/common/env"
+	"github.com/real-uangi/allingo/common/ready"
+	"github.com/real-uangi/fxtrategy"
 	"time"
 )
 
@@ -29,6 +31,7 @@ type KV interface {
 	GetStruct(key string, p any) error
 	GetType() Type
 	NewLock(key string) Lock
+	Ping() error
 }
 
 type Lock interface {
@@ -52,4 +55,28 @@ func anyToString(obj any) (string, error) {
 
 func stringToAny(str string, p any) error {
 	return convert.Json().UnmarshalFromString(str, p)
+}
+
+type checkpoint struct {
+	kv KV
+}
+
+func (c *checkpoint) Ready() error {
+	return c.kv.Ping()
+}
+
+func newCheckpoint(kv KV) *checkpoint {
+	return &checkpoint{
+		kv: kv,
+	}
+}
+
+// CheckPoint KV缓存健康检测
+func CheckPoint(kv KV) fxtrategy.Strategy[ready.CheckPoint] {
+	return fxtrategy.Strategy[ready.CheckPoint]{
+		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
+			Name: "db",
+			Item: newCheckpoint(kv),
+		},
+	}
 }

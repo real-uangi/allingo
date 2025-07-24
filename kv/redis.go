@@ -92,6 +92,10 @@ func (kv *RedisKV) GetType() Type {
 	return Redis
 }
 
+func (kv *RedisKV) Ping() error {
+	return kv.client.Ping(context.Background()).Err()
+}
+
 func (kv *RedisKV) TryLock(key string, parse string, ttl time.Duration) bool {
 	b, err := kv.client.SetNX(context.Background(), key, parse, ttl).Result()
 	if err = filterErr(err); err != nil {

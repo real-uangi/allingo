@@ -63,6 +63,10 @@ func (kv *LocalKV) GetType() Type {
 	return Local
 }
 
+func (kv *LocalKV) Ping() error {
+	return nil
+}
+
 type LocalLock struct {
 	kv     *LocalKV
 	key    string
