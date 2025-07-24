@@ -8,9 +8,16 @@
 
 package common
 
+import (
+	"github.com/real-uangi/allingo/common/ready"
+	"github.com/real-uangi/fxtrategy"
+)
+
 var Provides = []interface{}{
 	initGinEngine,
 	initGinCheckpoint,
+	ready.NewManager,
+	fxtrategy.NewContext[ready.CheckPoint],
 }
 
 var Invokes = []interface{}{
