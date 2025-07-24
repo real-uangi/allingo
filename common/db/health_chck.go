@@ -35,7 +35,7 @@ func newCheckpoint(manager *Manager) *checkpoint {
 func CheckPoint(manager *Manager) fxtrategy.Strategy[ready.CheckPoint] {
 	return fxtrategy.Strategy[ready.CheckPoint]{
 		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
-			Name: "db",
+			Name: "DB",
 			Item: newCheckpoint(manager),
 		},
 	}

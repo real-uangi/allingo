@@ -75,7 +75,7 @@ func newCheckpoint(kv KV) *checkpoint {
 func CheckPoint(kv KV) fxtrategy.Strategy[ready.CheckPoint] {
 	return fxtrategy.Strategy[ready.CheckPoint]{
 		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
-			Name: "db",
+			Name: "KV-storage",
 			Item: newCheckpoint(kv),
 		},
 	}

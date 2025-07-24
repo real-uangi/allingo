@@ -160,7 +160,7 @@ func (cp *ginCheckPoint) Ready() error {
 func initGinCheckpoint() fxtrategy.Strategy[ready.CheckPoint] {
 	return fxtrategy.Strategy[ready.CheckPoint]{
 		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
-			Name: "gin",
+			Name: "http-gin",
 			Item: newGinCheckPoint(),
 		},
 	}
