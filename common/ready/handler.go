@@ -26,7 +26,7 @@ func (m *Manager) HandleHealth(w http.ResponseWriter) {
 			health = false
 			_, _ = fmt.Fprintf(buffer, "FAILED %s %v\n", name, err)
 		} else {
-			_, _ = fmt.Fprintf(buffer, "OK %s %.3fs\n", name, time.Since(start).Seconds())
+			_, _ = fmt.Fprintf(w, "OK %.3fs %s\n", time.Since(start).Seconds(), name)
 		}
 		return nil
 	})
@@ -60,6 +60,6 @@ func (m *Manager) HandleHealthTarget(w http.ResponseWriter, target string) {
 		_, _ = fmt.Fprintf(w, "FAILED %s %v\n", target, err)
 	} else {
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, "OK %s %.3fs\n", target, time.Since(start).Seconds())
+		_, _ = fmt.Fprintf(w, "OK %.3fs %s\n", time.Since(start).Seconds(), target)
 	}
 }
