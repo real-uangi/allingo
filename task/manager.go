@@ -120,7 +120,7 @@ func (manager *TaskManager) checkName(name string) bool {
 }
 
 func (task *Task) occupy() bool {
-	err := task.lock.Lock(24*time.Hour, time.Second)
+	err := task.lock.Lock(time.Minute, time.Second)
 	if err != nil {
 		task.logger.Error(err)
 		return false
