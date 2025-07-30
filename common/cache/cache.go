@@ -137,3 +137,12 @@ func (c *Cache[T]) Purge() {
 	defer c.mu.Unlock()
 	c.data = make(map[string]*cacheItem[T])
 }
+
+func (c *Cache[T]) Expire(key string, ttl time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.data[key]
+	if !ok {
+		item.Expiration = time.Now().Add(ttl).UnixMilli()
+	}
+}

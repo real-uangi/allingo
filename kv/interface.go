@@ -32,6 +32,7 @@ type KV interface {
 	GetType() Type
 	NewLock(key string) Lock
 	Ping() error
+	Incr(key string, i int64, ttl time.Duration, nx bool) (int64, error)
 }
 
 type Lock interface {

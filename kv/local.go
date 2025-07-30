@@ -12,11 +12,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/real-uangi/allingo/common/cache"
 	"github.com/real-uangi/allingo/common/log"
+	"sync/atomic"
 	"time"
 )
 
 type LocalKV struct {
 	c      *cache.Cache[string]
+	aic    *cache.Cache[*atomic.Int64]
 	logger *log.StdLogger
 }
 
@@ -25,6 +27,7 @@ func newLocalKV() *LocalKV {
 	logger.Warn("using local kv, standalone mode only")
 	return &LocalKV{
 		c:      cache.New[string](time.Minute),
+		aic:    cache.New[*atomic.Int64](time.Minute),
 		logger: logger,
 	}
 }
@@ -65,6 +68,16 @@ func (kv *LocalKV) GetType() Type {
 
 func (kv *LocalKV) Ping() error {
 	return nil
+}
+
+func (kv *LocalKV) Incr(key string, i int64, ttl time.Duration, nx bool) (int64, error) {
+	v := kv.aic.GetOrCreate(key, ttl, func() *atomic.Int64 {
+		return new(atomic.Int64)
+	})
+	if !nx {
+		kv.aic.Expire(key, ttl)
+	}
+	return v.Add(i), nil
 }
 
 type LocalLock struct {

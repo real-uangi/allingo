@@ -123,6 +123,21 @@ func (kv *RedisKV) Unlock(key string, parse string) (err error) {
 	return
 }
 
+func (kv *RedisKV) Incr(key string, i int64, ttl time.Duration, nx bool) (int64, error) {
+	result, err := kv.client.IncrBy(context.Background(), key, i).Result()
+	if ex := filterErr(err); ex != nil {
+		return 0, ex
+	}
+	if ttl != 0 {
+		if nx {
+			err = kv.client.ExpireNX(context.Background(), key, ttl).Err()
+		} else {
+			err = kv.client.Expire(context.Background(), key, ttl).Err()
+		}
+	}
+	return result, filterErr(err)
+}
+
 type RedisLock struct {
 	kv     *RedisKV
 	key    string
