@@ -87,6 +87,10 @@ func (m *BaseMapperImpl[T]) SelectById(id string) (*T, error) {
 func (m *BaseMapperImpl[T]) GetPage(input page.InputInterface) (*page.Output[T], error) {
 	pageIndex := input.GetPageIndex()
 	pageSize := input.GetPageSize()
+	orderBy := input.GetOrderBy()
+	if orderBy == "" {
+		orderBy = "id"
+	}
 	input.ResetPageInfo()
 	var total int64
 	countResult := m.conn.Model(m.emptyEntity).Where(input).Order("created_at").Count(&total)
@@ -105,7 +109,7 @@ func (m *BaseMapperImpl[T]) GetPage(input page.InputInterface) (*page.Output[T],
 		return output, nil
 	}
 	output.List = make([]T, 0)
-	result := m.conn.Model(m.emptyEntity).Where(input).Limit(pageSize).Offset(offset).Find(&output.List)
+	result := m.conn.Model(m.emptyEntity).Where(input).Limit(pageSize).Offset(offset).Order(orderBy).Find(&output.List)
 	if err := filterError(result.Error); err != nil {
 		return nil, err
 	}

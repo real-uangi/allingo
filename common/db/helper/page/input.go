@@ -12,11 +12,13 @@ type InputInterface interface {
 	GetPageSize() int
 	GetOffset() int
 	ResetPageInfo()
+	GetOrderBy() string
 }
 
 type Input struct {
-	PageIndex int `json:"pageIndex" form:"pageIndex"`
-	PageSize  int `json:"pageSize" form:"pageSize"`
+	PageIndex int    `json:"pageIndex" form:"pageIndex"`
+	PageSize  int    `json:"pageSize" form:"pageSize"`
+	OrderBy   string `json:"orderBy" form:"orderBy"`
 }
 
 func (i *Input) GetPageIndex() int {
@@ -36,8 +38,16 @@ func (i *Input) GetPageSize() int {
 func (i *Input) ResetPageInfo() {
 	i.PageIndex = 0
 	i.PageSize = 0
+	i.OrderBy = ""
 }
 
 func (i *Input) GetOffset() int {
 	return (i.GetPageIndex() - 1) * i.GetPageSize()
+}
+
+func (i *Input) GetOrderBy() string {
+	if i.OrderBy == "" {
+		return "id"
+	}
+	return i.OrderBy
 }
