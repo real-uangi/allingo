@@ -109,6 +109,7 @@ func (c *Cache[T]) Len() int {
 func (c *Cache[T]) cleanup() {
 	toDelete := make([]string, 0)
 	ticker := time.NewTicker(c.interval)
+	defer ticker.Stop()
 	for {
 		now := time.Now().UnixMilli()
 		select {
