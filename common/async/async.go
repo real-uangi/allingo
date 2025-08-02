@@ -105,8 +105,7 @@ func seal(f func(), second int, longRun bool) func() {
 
 // Go execute the job immediately
 func Go(f func(), longRun bool) {
-	f = seal(f, 0, longRun)
-	go f()
+	go seal(f, 0, longRun)()
 }
 
 func DoOnce(f func()) {
@@ -118,8 +117,7 @@ func DoHold(f func()) {
 }
 
 func Delay(f func(), seconds int, longRun bool) {
-	f = seal(f, seconds, longRun)
-	go f()
+	go seal(f, seconds, longRun)()
 }
 
 func DelayOnce(f func(), seconds int) {
