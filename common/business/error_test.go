@@ -28,4 +28,6 @@ func TestNewError(t *testing.T) {
 
 	t.Log(business.NewErrorWithStatus(http.StatusUnauthorized))
 
+	t.Log(business.NewErrorf("111 %s", "222"))
+
 }

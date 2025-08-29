@@ -2,6 +2,7 @@ package business
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/real-uangi/allingo/common/trace"
 	"net/http"
 )
@@ -22,6 +23,13 @@ func msgWithStack(msg string) string {
 func NewError(msg string) *RuntimeError {
 	return &RuntimeError{
 		msg:  msgWithStack(msg),
+		code: http.StatusInternalServerError,
+	}
+}
+
+func NewErrorf(format string, args ...interface{}) *RuntimeError {
+	return &RuntimeError{
+		msg:  msgWithStack(fmt.Sprintf(format, args...)),
 		code: http.StatusInternalServerError,
 	}
 }
