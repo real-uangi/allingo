@@ -1,20 +1,46 @@
 package business
 
-import "net/http"
+import (
+	"bytes"
+	"github.com/real-uangi/allingo/common/trace"
+	"net/http"
+)
 
 type RuntimeError struct {
 	msg  string
 	code int
 }
 
+func msgWithStack(msg string) string {
+	buffer := new(bytes.Buffer)
+	buffer.WriteString(msg)
+	buffer.WriteRune('\n')
+	buffer.WriteString(trace.Stack(3))
+	return buffer.String()
+}
+
 func NewError(msg string) *RuntimeError {
 	return &RuntimeError{
-		msg:  msg,
+		msg:  msgWithStack(msg),
 		code: http.StatusInternalServerError,
 	}
 }
 
 func NewErrorWithCode(msg string, code int) *RuntimeError {
+	return &RuntimeError{
+		msg:  msgWithStack(msg),
+		code: code,
+	}
+}
+
+func NewErrorWithStatus(status int) error {
+	return &RuntimeError{
+		msg:  msgWithStack(http.StatusText(status)),
+		code: status,
+	}
+}
+
+func preDefine(msg string, code int) *RuntimeError {
 	return &RuntimeError{
 		msg:  msg,
 		code: code,
@@ -34,13 +60,13 @@ func (e *RuntimeError) GetStatusCode() int {
 }
 
 var (
-	ErrPermissionDenied = NewErrorWithCode("Permission Denied", http.StatusForbidden)
-	ErrForbidden        = NewErrorWithCode("Forbidden", http.StatusForbidden)
-	ErrUnauthorized     = NewErrorWithCode("Unauthorized", http.StatusUnauthorized)
-	ErrNotFound         = NewErrorWithCode("Not Found", http.StatusNotFound)
-	ErrBadRequest       = NewErrorWithCode("Bad Request", http.StatusBadRequest)
-	ErrDataCheckError   = NewErrorWithCode("Data Check Error", http.StatusUnprocessableEntity)
-	ErrTooManyRequests  = NewErrorWithCode("Too Many Requests", http.StatusTooManyRequests)
-	ErrBadGateway       = NewErrorWithCode("Bad Gateway", http.StatusBadGateway)
-	ErrIllegalUUID      = NewErrorWithCode("Illegal ID", http.StatusBadRequest)
+	ErrPermissionDenied = preDefine("Permission Denied", http.StatusForbidden)
+	ErrForbidden        = preDefine("Forbidden", http.StatusForbidden)
+	ErrUnauthorized     = preDefine("Unauthorized", http.StatusUnauthorized)
+	ErrNotFound         = preDefine("Not Found", http.StatusNotFound)
+	ErrBadRequest       = preDefine("Bad Request", http.StatusBadRequest)
+	ErrDataCheckError   = preDefine("Data Check Error", http.StatusUnprocessableEntity)
+	ErrTooManyRequests  = preDefine("Too Many Requests", http.StatusTooManyRequests)
+	ErrBadGateway       = preDefine("Bad Gateway", http.StatusBadGateway)
+	ErrIllegalUUID      = preDefine("Illegal ID", http.StatusBadRequest)
 )
