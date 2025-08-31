@@ -15,7 +15,7 @@ import (
 )
 
 func genError() error {
-	return business.NewError("111")
+	return business.NewStackError("111")
 }
 
 func TestNewError(t *testing.T) {
@@ -28,6 +28,6 @@ func TestNewError(t *testing.T) {
 
 	t.Log(business.NewErrorWithStatus(http.StatusUnauthorized))
 
-	t.Log(business.NewErrorf("111 %s", "222"))
+	t.Log(business.NewStackErrorf("111 %s", "222"))
 
 }
