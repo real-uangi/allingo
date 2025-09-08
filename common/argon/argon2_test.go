@@ -21,7 +21,7 @@ func TestArgon2(t *testing.T) {
 	}
 	t.Log("Encoded:", hashed)
 
-	ok, err := ComparePassword("secret-password", hashed)
+	ok, err := ComparePassword("secret-password", hashed, DefaultParams.Pepper)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,6 +48,6 @@ func BenchmarkEncode(b *testing.B) {
 
 func BenchmarkCompare(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = ComparePassword(password, hashed)
+		_, _ = ComparePassword(password, hashed, DefaultParams.Pepper)
 	}
 }

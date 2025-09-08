@@ -15,7 +15,6 @@ import (
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
 	"golang.org/x/crypto/argon2"
-	"runtime"
 	"strings"
 )
 
@@ -36,7 +35,7 @@ func init() {
 	DefaultParams = &Params{
 		Memory:     64 * 1024, // 64MB
 		Time:       3,
-		Threads:    uint8(runtime.NumCPU()),
+		Threads:    1,
 		SaltLength: 16,
 		KeyLength:  32,
 	}
@@ -72,7 +71,7 @@ func GenerateFromPassword(password string, p *Params) (string, error) {
 	return encoded, nil
 }
 
-func ComparePassword(password, encodedHash string) (bool, error) {
+func ComparePassword(password, encodedHash string, pepper []byte) (bool, error) {
 	parts := strings.Split(encodedHash, "$")
 	if len(parts) != 6 {
 		return false, fmt.Errorf("invalid encoded hash format: expected 6 parts, got %d", len(parts))
@@ -107,8 +106,8 @@ func ComparePassword(password, encodedHash string) (bool, error) {
 
 	// 如果设置了pepper，则密码+pepper一起参与哈希
 	passWithPepper := []byte(password)
-	if len(DefaultParams.Pepper) > 0 {
-		passWithPepper = append(passWithPepper, DefaultParams.Pepper...)
+	if len(pepper) > 0 {
+		passWithPepper = append(passWithPepper, pepper...)
 	}
 
 	hash := argon2.IDKey(passWithPepper, salt, time, memory, threads, uint32(len(expectedHash)))
