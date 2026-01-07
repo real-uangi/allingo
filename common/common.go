@@ -19,5 +19,5 @@ var Module = fx.Options(
 	fx.Provide(ready.NewManager),
 	fxtrategy.ProvideContext[ready.CheckPoint](ready.CPGroupName),
 	fx.Invoke(startHttpServer),
-	fx.Provide(enableHealthCheckApi),
+	fx.Invoke(enableHealthCheckApi),
 )
