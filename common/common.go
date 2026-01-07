@@ -11,16 +11,13 @@ package common
 import (
 	"github.com/real-uangi/allingo/common/ready"
 	"github.com/real-uangi/fxtrategy"
+	"go.uber.org/fx"
 )
 
-var Provides = []interface{}{
-	initGinEngine,
-	initGinCheckpoint,
-	ready.NewManager,
-	fxtrategy.NewContext[ready.CheckPoint],
-}
-
-var Invokes = []interface{}{
-	startHttpServer,
-	enableHealthCheckApi,
-}
+var Module = fx.Options(
+	fx.Provide(initGinEngine),
+	fx.Provide(ready.NewManager),
+	fxtrategy.ProvideContext[ready.CheckPoint](ready.CPGroupName),
+	fx.Invoke(startHttpServer),
+	fx.Provide(enableHealthCheckApi),
+)

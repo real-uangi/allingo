@@ -157,14 +157,11 @@ func (cp *ginCheckPoint) Ready() error {
 	return nil
 }
 
-func initGinCheckpoint() fxtrategy.Strategy[ready.CheckPoint] {
-	return fxtrategy.Strategy[ready.CheckPoint]{
-		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
-			Name: "http-gin",
-			Item: newGinCheckPoint(),
-		},
-	}
+func (cp *ginCheckPoint) ItemName() string {
+	return "http_gin"
 }
+
+var CheckPoint = fxtrategy.ProvideItem[ready.CheckPoint](newGinCheckPoint, ready.CPGroupName)
 
 func enableHealthCheckApi(engine *gin.Engine, manager *ready.Manager) {
 	engine.GET("/health", auth.InternalOnlyMiddleware, func(c *gin.Context) {

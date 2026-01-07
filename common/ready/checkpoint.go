@@ -8,6 +8,11 @@
 
 package ready
 
+import "github.com/real-uangi/fxtrategy"
+
 type CheckPoint interface {
 	Ready() error
+	fxtrategy.Nameable
 }
+
+const CPGroupName = "ready_checkpoint"

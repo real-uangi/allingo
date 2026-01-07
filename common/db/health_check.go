@@ -31,12 +31,9 @@ func newCheckpoint(manager *Manager) *checkpoint {
 	}
 }
 
-// CheckPoint 数据库健康检测
-func CheckPoint(manager *Manager) fxtrategy.Strategy[ready.CheckPoint] {
-	return fxtrategy.Strategy[ready.CheckPoint]{
-		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
-			Name: "DB",
-			Item: newCheckpoint(manager),
-		},
-	}
+func (c *checkpoint) ItemName() string {
+	return "DB"
 }
+
+// CheckPoint 数据库健康检测
+var CheckPoint = fxtrategy.ProvideItem[ready.CheckPoint](newCheckpoint, ready.CPGroupName)

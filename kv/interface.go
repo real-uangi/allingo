@@ -72,12 +72,9 @@ func newCheckpoint(kv KV) *checkpoint {
 	}
 }
 
-// CheckPoint KV缓存健康检测
-func CheckPoint(kv KV) fxtrategy.Strategy[ready.CheckPoint] {
-	return fxtrategy.Strategy[ready.CheckPoint]{
-		NS: fxtrategy.NamedStrategy[ready.CheckPoint]{
-			Name: "KV-storage",
-			Item: newCheckpoint(kv),
-		},
-	}
+func (c *checkpoint) ItemName() string {
+	return "KV-storage"
 }
+
+// CheckPoint KV缓存健康检测
+var CheckPoint = fxtrategy.ProvideItem[ready.CheckPoint](newCheckpoint, ready.CPGroupName)
