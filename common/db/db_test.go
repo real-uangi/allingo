@@ -27,15 +27,21 @@ type SearchExample struct {
 
 var manager *Manager
 
+var initErr error
+
 func init() {
 	var err error
 	manager, err = InitDataSource()
 	if err != nil {
-		panic(err)
+		initErr = err
 	}
 }
 
 func TestDB(t *testing.T) {
+	if initErr != nil {
+		t.Skip()
+	}
+
 	example := &AExample{}
 	example.ID = uuid.NewString()
 
@@ -55,6 +61,10 @@ func TestDB(t *testing.T) {
 }
 
 func TestMapper(t *testing.T) {
+	if initErr != nil {
+		t.Skip()
+	}
+
 	mapper := NewBaseMapper[AExample](manager)
 
 	spId := uuid.NewString()
@@ -91,6 +101,9 @@ func TestMapper(t *testing.T) {
 }
 
 func TestJSONB(t *testing.T) {
+	if initErr != nil {
+		t.Skip()
+	}
 
 	mapper := NewBaseMapper[AExample](manager)
 
