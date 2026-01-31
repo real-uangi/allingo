@@ -30,9 +30,9 @@ func TestUUIDToBase64(t *testing.T) {
 }
 
 func TestSP(t *testing.T) {
-	t.Log(convert.UUIDMustToBase64("90626524-9722-42f1-9752-4aab29155683"))
-	t.Log(convert.UUIDMustToBase64("b87e3f1f-7aac-463d-a749-4379e78ada67"))
-	t.Log(convert.UUIDMustToBase64("2e85dd5f-3fe3-4aa9-8675-e06a92ad254d"))
+	t.Log(convert.UUIDStrToBase64("90626524-9722-42f1-9752-4aab29155683"))
+	t.Log(convert.UUIDStrToBase64("b87e3f1f-7aac-463d-a749-4379e78ada67"))
+	t.Log(convert.UUIDStrToBase64("2e85dd5f-3fe3-4aa9-8675-e06a92ad254d"))
 }
 
 type Example struct {

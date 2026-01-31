@@ -14,11 +14,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// Deprecated: use base62.EncodeUUID instead
 func UUIDToBase64(u uuid.UUID) string {
 	// 使用 base64 URL 编码并去除填充符号 =
 	return base64.RawURLEncoding.EncodeToString(u[:])
 }
 
+// Deprecated: use base62.EncodeUUID instead
 func UUIDStrToBase64(id string) (string, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
@@ -27,14 +29,7 @@ func UUIDStrToBase64(id string) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(u[:]), nil
 }
 
-func UUIDMustToBase64(id string) string {
-	b, err := UUIDStrToBase64(id)
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-
+// Deprecated: use base62.DecodeUUID instead
 func UUIDFromBase64(s string) (uuid.UUID, error) {
 	bytes, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
