@@ -34,3 +34,32 @@ func TestSP(t *testing.T) {
 	t.Log(convert.UUIDMustToBase64("b87e3f1f-7aac-463d-a749-4379e78ada67"))
 	t.Log(convert.UUIDMustToBase64("2e85dd5f-3fe3-4aa9-8675-e06a92ad254d"))
 }
+
+type Example struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+func TestJsonUUID(t *testing.T) {
+	e := Example{
+		ID:   uuid.New(),
+		Name: "hardworking",
+	}
+	str, err := convert.Json().MarshalToString(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(str)
+
+	var decoded Example
+	err = convert.Json().UnmarshalFromString(str, &decoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(decoded)
+	if decoded.ID != e.ID {
+		t.Fatal("not equal")
+	}
+
+}

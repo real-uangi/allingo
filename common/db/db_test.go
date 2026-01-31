@@ -15,7 +15,7 @@ import (
 )
 
 type AExample struct {
-	ID   string          `json:"id" gorm:"primary_key"`
+	ID   uuid.UUID       `json:"id" gorm:"primary_key"`
 	Data JSONB[[]string] `json:"data" gorm:"column:data"`
 	Model
 }
@@ -34,6 +34,11 @@ func init() {
 	manager, err = InitDataSource()
 	if err != nil {
 		initErr = err
+		return
+	}
+	err = manager.GetDB().AutoMigrate(AExample{})
+	if err != nil {
+		initErr = err
 	}
 }
 
@@ -43,7 +48,7 @@ func TestDB(t *testing.T) {
 	}
 
 	example := &AExample{}
-	example.ID = uuid.NewString()
+	example.ID = uuid.New()
 
 	result := manager.GetDB().Create(example)
 
@@ -67,14 +72,14 @@ func TestMapper(t *testing.T) {
 
 	mapper := NewBaseMapper[AExample](manager)
 
-	spId := uuid.NewString()
+	spId := uuid.New()
 
 	t.Log(mapper.Insert(&AExample{ID: spId}))
 
 	t.Log(mapper.UpdateByPrimaryKeySelective(&AExample{ID: spId}))
 
-	spId2 := uuid.NewString()
-	spId3 := uuid.NewString()
+	spId2 := uuid.New()
+	spId3 := uuid.New()
 	list := make([]AExample, 0)
 	list = append(list, AExample{ID: spId2})
 	list = append(list, AExample{ID: spId3})
@@ -107,7 +112,7 @@ func TestJSONB(t *testing.T) {
 
 	mapper := NewBaseMapper[AExample](manager)
 
-	data := &AExample{ID: uuid.New().String()}
+	data := &AExample{ID: uuid.New()}
 	data.Data.Set([]string{"111", "222"})
 	t.Log(mapper.Insert(data))
 

@@ -9,6 +9,7 @@ package db
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"github.com/real-uangi/allingo/common/db/helper/page"
 	"github.com/real-uangi/allingo/common/log"
 	"gorm.io/gorm"
@@ -17,13 +18,13 @@ import (
 type BaseMapper[T ModelConstraint] interface {
 	SelectOne(t *T) (*T, error)
 	Select(t *T) ([]T, error)
-	SelectById(id string) (*T, error)
+	SelectById(id uuid.UUID) (*T, error)
 
 	GetPage(input page.InputInterface) (*page.Output[T], error)
 
 	UpdateByPrimaryKeySelective(t *T) (int64, error)
 
-	DeleteById(ids ...string) (int64, error)
+	DeleteById(ids ...uuid.UUID) (int64, error)
 
 	Insert(e *T) (int64, error)
 	InsertBatch(list []T) (int64, error)
@@ -72,7 +73,7 @@ func (m *BaseMapperImpl[T]) Select(t *T) ([]T, error) {
 	return list, nil
 }
 
-func (m *BaseMapperImpl[T]) SelectById(id string) (*T, error) {
+func (m *BaseMapperImpl[T]) SelectById(id uuid.UUID) (*T, error) {
 	t := new(T)
 	result := m.conn.Where("id = ?", id).First(t)
 	if err := filterError(result.Error); err != nil {
@@ -124,7 +125,7 @@ func (m *BaseMapperImpl[T]) UpdateByPrimaryKeySelective(t *T) (int64, error) {
 	return result.RowsAffected, nil
 }
 
-func (m *BaseMapperImpl[T]) DeleteById(ids ...string) (int64, error) {
+func (m *BaseMapperImpl[T]) DeleteById(ids ...uuid.UUID) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
