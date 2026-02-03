@@ -14,7 +14,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	logger := NewStdLogger("dev.ground.log.test.StdLogger")
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
 	logger.Error(errors.New("error"), "error")
 	logger.Warn("warn")
 	logger.Info("info")

@@ -16,13 +16,13 @@ import (
 
 // 设置颜色
 var levelDec = [7]string{
-	logrus.PanicLevel: "\u001B[1;35m[PANIC]\u001B[0m", // 紫色
-	logrus.FatalLevel: "\u001B[1;31m[FATAL]\u001B[0m", // 红色
-	logrus.ErrorLevel: "\u001B[31m[ERROR]\u001B[0m",   // 深红
-	logrus.WarnLevel:  "\u001B[33m[WARN ]\u001B[0m",   // 黄色
-	logrus.InfoLevel:  "\u001B[32m[INFO ]\u001B[0m",   // 绿色
-	logrus.DebugLevel: "\u001B[36m[DEBUG]\u001B[0m",   // 青色
-	logrus.TraceLevel: "\u001B[34m[TRACE]\u001B[0m",   // 蓝色
+	logrus.PanicLevel: "\u001B[1;35m[P]\u001B[0m", // 紫色
+	logrus.FatalLevel: "\u001B[1;31m[F]\u001B[0m", // 红色
+	logrus.ErrorLevel: "\u001B[31m[E]\u001B[0m",   // 深红
+	logrus.WarnLevel:  "\u001B[33m[W]\u001B[0m",   // 黄色
+	logrus.InfoLevel:  "\u001B[32m[I]\u001B[0m",   // 绿色
+	logrus.DebugLevel: "\u001B[36m[D]\u001B[0m",   // 青色
+	logrus.TraceLevel: "\u001B[34m[T]\u001B[0m",   // 蓝色
 }
 
 type customFormatter struct {
@@ -50,7 +50,7 @@ func (f *customFormatter) preSetMiddles(loggerName string) {
 	for i := 0; i < len(levelDec); i++ {
 		buffer := bytes.NewBuffer(make([]byte, 0, 128))
 		buffer.WriteString(" -- ")
-		buffer.WriteString(fmt.Sprintf("\u001B[36;1m%-30s\u001B[0m ", shorterName(loggerName, 30)))
+		buffer.WriteString(fmt.Sprintf("\u001B[36;1m%-40s\u001B[0m ", shorterName(loggerName, 40)))
 		buffer.WriteString(levelDec[i])
 		buffer.Write([]byte(" "))
 		f.middleInfos[i] = buffer.Bytes()
