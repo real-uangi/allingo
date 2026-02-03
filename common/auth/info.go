@@ -59,3 +59,7 @@ func CurrentUser() LevelInfoInterface {
 	}
 	return v.(LevelInfoInterface)
 }
+
+func SetCurrentUser(info LevelInfoInterface) {
+	holder.Put(constants.AuthInfoContext, info)
+}
