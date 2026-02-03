@@ -11,7 +11,14 @@ package log
 import (
 	"github.com/sirupsen/logrus"
 	"sync"
+	"sync/atomic"
 )
+
+var dropped = new(atomic.Int64)
+
+func DroppedCount() int64 {
+	return dropped.Load()
+}
 
 var logWrapperPool = sync.Pool{
 	New: func() any {
@@ -28,7 +35,9 @@ func putLogWrapper(wrapper *asyncLogWrapper) {
 	wrapper.Level = 0
 	wrapper.Entry = nil
 	wrapper.Format = ""
-	wrapper.Args = nil
+	if wrapper.Args != nil {
+		wrapper.Args = wrapper.Args[:0]
+	}
 	logWrapperPool.Put(wrapper)
 }
 
@@ -42,10 +51,34 @@ type asyncLogWrapper struct {
 }
 
 func (wrapper *asyncLogWrapper) queue() {
+	switch wrapper.Level {
+	case logrus.DebugLevel, logrus.InfoLevel, logrus.TraceLevel:
+		wrapper.bestEffortQueue()
+	default:
+		wrapper.mustQueue()
+	}
+}
+
+func (wrapper *asyncLogWrapper) mustQueue() {
 	logQueue <- wrapper
 }
 
+func (wrapper *asyncLogWrapper) bestEffortQueue() {
+	select {
+	case logQueue <- wrapper:
+		return
+	default:
+		// 队列满，丢弃低级别日志
+		putLogWrapper(wrapper)
+		dropped.Add(1)
+		return
+	}
+}
+
 func (wrapper *asyncLogWrapper) flush() {
+	defer func() {
+		_ = recover()
+	}()
 	defer putLogWrapper(wrapper)
 	if wrapper.Entry == nil {
 		return
