@@ -60,7 +60,7 @@ func startHttpServer(lc fx.Lifecycle, engine *gin.Engine) {
 						}
 					}
 				}()
-				httpLogger.Infof("http server started on https://%s:%s", localIp, srv.Addr)
+				httpLogger.Infof("http server started on https://%s%s", localIp, srv.Addr)
 			} else {
 				go func() {
 					err := srv.ListenAndServe()
