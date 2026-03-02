@@ -72,7 +72,7 @@ func startHttpServer(lc fx.Lifecycle, engine *gin.Engine) {
 						}
 					}
 				}()
-				httpLogger.Infof("http server started on http://%s:%s", localIp, srv.Addr)
+				httpLogger.Infof("http server started on http://%s%s", localIp, srv.Addr)
 			}
 			if env.Get(env.RunningMode) != env.ReleaseMode {
 				pprofPort := env.GetOrDefault("PPROF_PORT", "18080")
