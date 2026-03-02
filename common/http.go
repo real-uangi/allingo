@@ -21,6 +21,7 @@ import (
 	"github.com/real-uangi/allingo/common/ready"
 	"github.com/real-uangi/allingo/common/result"
 	"github.com/real-uangi/allingo/common/trace"
+	"github.com/real-uangi/allingo/utils/iptools"
 	"github.com/real-uangi/fxtrategy"
 	"go.uber.org/fx"
 	"net"
@@ -44,6 +45,10 @@ func startHttpServer(lc fx.Lifecycle, engine *gin.Engine) {
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			localIp, _ := iptools.GetBestMatchIp()
+			if localIp == "" {
+				localIp = "127.0.0.1"
+			}
 			if certFile != "" && keyFile != "" {
 				go func() {
 					err := srv.ListenAndServeTLS(certFile, keyFile)
@@ -55,7 +60,7 @@ func startHttpServer(lc fx.Lifecycle, engine *gin.Engine) {
 						}
 					}
 				}()
-				httpLogger.Infof("http server started on https://0.0.0.0%s", srv.Addr)
+				httpLogger.Infof("http server started on https://%s:%s", localIp, srv.Addr)
 			} else {
 				go func() {
 					err := srv.ListenAndServe()
@@ -67,11 +72,11 @@ func startHttpServer(lc fx.Lifecycle, engine *gin.Engine) {
 						}
 					}
 				}()
-				httpLogger.Infof("http server started on port %s", srv.Addr)
+				httpLogger.Infof("http server started on http://%s:%s", localIp, srv.Addr)
 			}
 			if env.Get(env.RunningMode) != env.ReleaseMode {
 				pprofPort := env.GetOrDefault("PPROF_PORT", "18080")
-				httpLogger.Infof("pprof server started on http://127.0.0.1:%s/debug/pprof", pprofPort)
+				httpLogger.Infof("pprof server started on http://%s:%s/debug/pprof", localIp, pprofPort)
 				go debug.RunPprofHttpServer(pprofPort)
 			}
 			return nil
