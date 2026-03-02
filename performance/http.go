@@ -11,6 +11,8 @@ package performance
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/real-uangi/allingo/common/env"
+	"github.com/real-uangi/allingo/common/log"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +46,18 @@ func init() {
 	prometheus.MustRegister(httpRequestsTotal, httpRequestDuration)
 }
 
+var (
+	debugEnable bool
+	debugLogger *log.StdLogger
+)
+
+func init() {
+	if env.Get(gin.EnvGinMode) != gin.ReleaseMode {
+		debugEnable = true
+		debugLogger = log.NewStdLogger("performance-http")
+	}
+}
+
 func GinHttpMiddleware(c *gin.Context) {
 	path := c.FullPath()
 	if !strings.HasPrefix(path, "/api/") {
@@ -55,6 +69,11 @@ func GinHttpMiddleware(c *gin.Context) {
 	c.Next()
 	duration := time.Since(start).Seconds()
 	status := c.Writer.Status()
+
 	httpRequestsTotal.WithLabelValues(c.Request.Method, path, strconv.Itoa(status)).Inc()
 	httpRequestDuration.WithLabelValues(c.Request.Method, path).Observe(duration)
+
+	if debugEnable {
+		debugLogger.Debugf("[%d] %.2fs %s %s", status, duration, c.Request.Method, path)
+	}
 }
