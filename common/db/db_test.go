@@ -125,3 +125,24 @@ func TestJSONB(t *testing.T) {
 	t.Log(mapper.DeleteById(data.ID))
 	t.Log(find.Data.Get())
 }
+
+func TestBaseMapperImpl_InsertBatch(t *testing.T) {
+	if initErr != nil {
+		t.Skip()
+	}
+
+	mapper := NewBaseMapper[AExample](manager)
+
+	list := make([]AExample, 0, 512)
+	for range 255 {
+		list = append(list, AExample{ID: uuid.New()})
+	}
+	t.Log(len(list))
+	t.Log(mapper.InsertBatch(list))
+
+	ids := make([]uuid.UUID, 0, 512)
+	for _, v := range list {
+		ids = append(ids, v.ID)
+	}
+	t.Log(mapper.DeleteById(ids...))
+}
