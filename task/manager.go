@@ -13,7 +13,6 @@ import (
 	"github.com/real-uangi/allingo/common/trace"
 	"github.com/real-uangi/allingo/kv"
 	"github.com/robfig/cron/v3"
-	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -22,7 +21,7 @@ import (
 type TaskManager struct {
 	c      *cron.Cron
 	logger *log.StdLogger
-	added  []string
+	tasks  map[string]*Task
 	mu     sync.Mutex
 	app    string
 	kv     kv.KV
@@ -34,7 +33,7 @@ func NewManager(kv kv.KV) *TaskManager {
 			cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
 		))),
 		logger: log.For[TaskManager](),
-		added:  make([]string, 0),
+		tasks:  make(map[string]*Task),
 		kv:     kv,
 	}
 	manager.c.Start()
@@ -52,9 +51,11 @@ type Task struct {
 
 // Add cron "秒 分 时 d日 m月 w周几 @...ly"
 func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
 	manager.logger.Infof("add task %s with spec: %s", name, spec)
-	if !manager.checkName(name) {
-		manager.logger.Warnf("task name already existed: %s", name)
+	if t := manager.tasks[name]; t != nil {
+		manager.logger.Warnf("task already existed: %s", name)
 	}
 	var counter int64 = 0
 	var err error
@@ -108,15 +109,8 @@ func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error
 		return nil, err
 	}
 	t.id = id
+	manager.tasks[name] = t
 	return t, nil
-}
-
-func (manager *TaskManager) checkName(name string) bool {
-	manager.mu.Lock()
-	defer manager.mu.Unlock()
-	result := !slices.Contains(manager.added, name)
-	manager.added = append(manager.added, name)
-	return result
 }
 
 func (task *Task) occupy() bool {
