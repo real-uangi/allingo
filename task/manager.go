@@ -113,6 +113,14 @@ func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error
 	return t, nil
 }
 
+// MustAdd cron "秒 分 时 d日 m月 w周几 @...ly"
+func (manager *TaskManager) MustAdd(name, spec string, f func() error) {
+	_, err := manager.Add(name, spec, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (task *Task) occupy() bool {
 	err := task.lock.Lock(time.Minute, time.Second)
 	if err != nil {
