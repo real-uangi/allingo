@@ -9,6 +9,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/real-uangi/allingo/common/business"
 	"github.com/real-uangi/allingo/common/result"
 	"net/http"
@@ -76,6 +77,33 @@ func singleQueryPrecess[O any](c *gin.Context, f func(string) (O, error), name s
 	}
 }
 
+func SingleQueryUUIDFunc[O any](f func(uuid.UUID) (O, error), name string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		singleQueryUUIDPrecess(c, f, name)
+	}
+}
+
+func singleQueryUUIDPrecess[O any](c *gin.Context, f func(uuid2 uuid.UUID) (O, error), name string) {
+	s := c.Query(name)
+	if s == "" {
+		c.Render(http.StatusBadRequest, result.BadRequest(business.NewErrorWithCode(name+" 不能为空", http.StatusBadRequest)))
+		return
+	}
+
+	id, err := uuid.Parse(s)
+	if err != nil {
+		c.Render(http.StatusBadRequest, result.BadRequest(err))
+		return
+	}
+
+	output, err := f(id)
+	if err != nil {
+		c.Render(HandleErr(err))
+	} else {
+		c.Render(http.StatusOK, result.Ok(output))
+	}
+}
+
 func NoArgsFunc[O any](f func() (O, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		noArgsProcess(c, f)
@@ -93,4 +121,51 @@ func noArgsProcess[O any](c *gin.Context, f func() (O, error)) {
 
 func HandleErr(err error) (int, *result.Result[result.RawField]) {
 	return result.FromError(err)
+}
+
+func SingleParamFunc[O any](f func(string) (O, error), name string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		singleParamPrecess(c, f, name)
+	}
+}
+
+func singleParamPrecess[O any](c *gin.Context, f func(string) (O, error), name string) {
+	s := c.Param(name)
+	if s == "" {
+		c.Render(http.StatusBadRequest, result.BadRequest(business.NewErrorWithCode(name+" 不能为空", http.StatusBadRequest)))
+		return
+	}
+	output, err := f(s)
+	if err != nil {
+		c.Render(HandleErr(err))
+	} else {
+		c.Render(http.StatusOK, result.Ok(output))
+	}
+}
+
+func SingleParamUUIDFunc[O any](f func(uuid.UUID) (O, error), name string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		singleParamUUIDPrecess(c, f, name)
+	}
+}
+
+func singleParamUUIDPrecess[O any](c *gin.Context, f func(uuid.UUID) (O, error), name string) {
+	s := c.Param(name)
+	if s == "" {
+		c.Render(http.StatusBadRequest, result.BadRequest(business.NewErrorWithCode(name+" 不能为空", http.StatusBadRequest)))
+		return
+	}
+
+	id, err := uuid.Parse(s)
+	if err != nil {
+		c.Render(http.StatusBadRequest, result.BadRequest(err))
+		return
+	}
+
+	output, err := f(id)
+	if err != nil {
+		c.Render(HandleErr(err))
+	} else {
+		c.Render(http.StatusOK, result.Ok(output))
+	}
 }
