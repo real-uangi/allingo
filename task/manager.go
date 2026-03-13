@@ -72,18 +72,18 @@ func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error
 		counter: counter,
 		lock:    manager.kv.NewLock(taskId + ":lock"),
 		kv:      manager.kv,
-		logger:  log.NewStdLogger("marmot.dTask." + name),
+		logger:  log.NewStdLogger("allingo.task." + name),
 	}
 	id, err := manager.c.AddFunc(spec, func() {
 		//执行
-		async.Go(func() {
+		_ = async.SubmitOnce(func() error {
 			var err error
 			//验证
 			if !t.occupy() {
 				manager.logger.Infof("ignoring task [%s]", name)
-				return
+				return nil
 			}
-			manager.logger.Infof("task [%s] will be executed", name)
+			manager.logger.Infof("task [%s] will be executed on this machine", name)
 			panicked := true
 			start := time.Now()
 			defer func() {
@@ -103,7 +103,8 @@ func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error
 			// just call user function with warp
 			err = f()
 			panicked = false
-		}, false)
+			return nil
+		})
 	})
 	if err != nil {
 		return nil, err

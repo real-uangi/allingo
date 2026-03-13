@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.94
+	github.com/panjf2000/ants/v2 v2.11.6
 	github.com/prometheus/client_golang v1.23.2
 	github.com/real-uangi/fxtrategy v1.3.0
 	github.com/redis/go-redis/v9 v9.10.0

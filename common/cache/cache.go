@@ -40,7 +40,7 @@ func New[T any](interval time.Duration) *Cache[T] {
 		data:     make(map[string]*cacheItem[T]),
 		interval: interval,
 	}
-	async.Go(c.cleanup, true)
+	_ = async.SubmitKeepRunning(c.cleanup)
 	return c
 }
 
@@ -106,7 +106,7 @@ func (c *Cache[T]) Len() int {
 	return length
 }
 
-func (c *Cache[T]) cleanup() {
+func (c *Cache[T]) cleanup() error {
 	toDelete := make([]string, 0)
 	ticker := time.NewTicker(c.interval)
 	defer ticker.Stop()

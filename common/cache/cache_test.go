@@ -82,6 +82,8 @@ func TestLock(t *testing.T) {
 	err = c.Unlock("A", "KEY-B")
 	if err != nil {
 		t.Log("cannot unlock with wrong key, this is correct ", err)
+	} else {
+		t.Fatal("unlocked with wrong key, this is NOT correct ", time.Now().Sub(start).String())
 	}
 
 	err = c.Lock("A", "KEY-A", 10*time.Second, 20*time.Second)
