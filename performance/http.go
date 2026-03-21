@@ -52,7 +52,7 @@ var (
 )
 
 func init() {
-	if env.Get(gin.EnvGinMode) != gin.ReleaseMode {
+	if env.Get(env.RunningMode) != env.ReleaseMode {
 		debugEnable = true
 		debugLogger = log.NewStdLogger("performance-http")
 	}
