@@ -40,6 +40,32 @@ func (kv *LocalKV) Get(key string) (string, bool) {
 	return kv.c.Get(key)
 }
 
+func (kv *LocalKV) SetIfAbsent(key string, value string, ttl time.Duration) (bool, error) {
+	return kv.c.SetIfAbsent(key, value, ttl), nil
+}
+
+func (kv *LocalKV) CompareAndSet(key string, expected, value string, ttl time.Duration) (bool, error) {
+	return kv.c.CompareAndSet(key, expected, value, ttl, func(left, right string) bool {
+		return left == right
+	}), nil
+}
+
+func (kv *LocalKV) CompareAndDelete(key string, expected string) (bool, error) {
+	return kv.c.CompareAndDelete(key, expected, func(left, right string) bool {
+		return left == right
+	}), nil
+}
+
+func (kv *LocalKV) GetAndDelete(key string) (string, bool, error) {
+	value, ok := kv.c.GetAndDelete(key)
+	return value, ok, nil
+}
+
+func (kv *LocalKV) GetAndSet(key string, value string, ttl time.Duration) (string, bool, error) {
+	old, ok := kv.c.GetAndSet(key, value, ttl)
+	return old, ok, nil
+}
+
 func (kv *LocalKV) SetStruct(key string, obj interface{}, ttl time.Duration) error {
 	str, err := anyToString(obj)
 	if err != nil {
@@ -74,7 +100,7 @@ func (kv *LocalKV) Incr(key string, i int64, ttl time.Duration, nx bool) (int64,
 	v := kv.aic.GetOrCreate(key, ttl, func() *atomic.Int64 {
 		return new(atomic.Int64)
 	})
-	if !nx {
+	if ttl != 0 && !nx {
 		kv.aic.Expire(key, ttl)
 	}
 	return v.Add(i), nil
@@ -105,7 +131,11 @@ func (lock *LocalLock) Unlock() error {
 	if !lock.locked {
 		return nil
 	}
-	return lock.kv.c.Unlock(lock.key, lock.parse)
+	err := lock.kv.c.Unlock(lock.key, lock.parse)
+	if err == nil {
+		lock.locked = false
+	}
+	return err
 }
 
 func (lock *LocalLock) Lock(ttl, maxWait time.Duration) error {
@@ -115,4 +145,15 @@ func (lock *LocalLock) Lock(ttl, maxWait time.Duration) error {
 	}
 	lock.locked = true
 	return nil
+}
+
+func (lock *LocalLock) Refresh(ttl time.Duration) (bool, error) {
+	if !lock.locked {
+		return false, nil
+	}
+	ok := lock.kv.c.RefreshLock(lock.key, lock.parse, ttl)
+	if !ok {
+		lock.locked = false
+	}
+	return ok, nil
 }

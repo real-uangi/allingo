@@ -26,6 +26,18 @@ func newCacheItem[T any](data T, ttl time.Duration) *cacheItem[T] {
 	}
 }
 
+func (c *Cache[T]) loadValidItemLocked(key string, now int64) (*cacheItem[T], bool) {
+	item, ok := c.data[key]
+	if !ok {
+		return nil, false
+	}
+	if item.Expiration < now {
+		delete(c.data, key)
+		return nil, false
+	}
+	return item, true
+}
+
 type Cache[T any] struct {
 	mu       sync.RWMutex
 	data     map[string]*cacheItem[T]
@@ -51,27 +63,26 @@ func (c *Cache[T]) Set(key string, value T, ttl time.Duration) {
 }
 
 func (c *Cache[T]) Get(key string) (value T, ok bool) {
-	c.mu.RLock()
-	item, ok := c.data[key]
-	c.mu.RUnlock()
-	if ok {
-		if item.Expiration < time.Now().UnixMilli() {
-			c.Del(key)
-			ok = false
-			return
-		}
-		value = item.Data
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.loadValidItemLocked(key, now)
+	if !ok {
+		return value, false
 	}
-	return
+	return item.Data, true
 }
 
 func (c *Cache[T]) GetOrCreate(key string, ttl time.Duration, fallbackFunc func() T) T {
-	v, ok := c.Get(key)
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.loadValidItemLocked(key, now)
 	if ok {
-		return v
+		return item.Data
 	}
-	v = fallbackFunc()
-	c.Set(key, v, ttl)
+	v := fallbackFunc()
+	c.data[key] = newCacheItem(v, ttl)
 	return v
 }
 
@@ -87,6 +98,71 @@ func (c *Cache[T]) Del(key string) {
 	c.mu.Lock()
 	delete(c.data, key)
 	c.mu.Unlock()
+}
+
+func (c *Cache[T]) SetIfAbsent(key string, value T, ttl time.Duration) bool {
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if _, ok := c.loadValidItemLocked(key, now); ok {
+		return false
+	}
+	c.data[key] = newCacheItem(value, ttl)
+	return true
+}
+
+func (c *Cache[T]) CompareAndSet(key string, expected, value T, ttl time.Duration, equal func(left, right T) bool) bool {
+	if equal == nil {
+		return false
+	}
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.loadValidItemLocked(key, now)
+	if !ok || !equal(item.Data, expected) {
+		return false
+	}
+	c.data[key] = newCacheItem(value, ttl)
+	return true
+}
+
+func (c *Cache[T]) CompareAndDelete(key string, expected T, equal func(left, right T) bool) bool {
+	if equal == nil {
+		return false
+	}
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.loadValidItemLocked(key, now)
+	if !ok || !equal(item.Data, expected) {
+		return false
+	}
+	delete(c.data, key)
+	return true
+}
+
+func (c *Cache[T]) GetAndDelete(key string) (value T, ok bool) {
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.loadValidItemLocked(key, now)
+	if !ok {
+		return value, false
+	}
+	delete(c.data, key)
+	return item.Data, true
+}
+
+func (c *Cache[T]) GetAndSet(key string, value T, ttl time.Duration) (old T, ok bool) {
+	now := time.Now().UnixMilli()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.loadValidItemLocked(key, now)
+	if ok {
+		old = item.Data
+	}
+	c.data[key] = newCacheItem(value, ttl)
+	return old, ok
 }
 
 func (c *Cache[T]) Keys() []string {
@@ -140,10 +216,12 @@ func (c *Cache[T]) Purge() {
 }
 
 func (c *Cache[T]) Expire(key string, ttl time.Duration) {
+	now := time.Now().UnixMilli()
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	item, ok := c.data[key]
+	item, ok := c.loadValidItemLocked(key, now)
 	if !ok {
-		item.Expiration = time.Now().Add(ttl).UnixMilli()
+		return
 	}
+	item.Expiration = time.Now().Add(ttl).UnixMilli()
 }

@@ -8,6 +8,8 @@
 package cache
 
 import (
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -92,4 +94,35 @@ func TestLock(t *testing.T) {
 	}
 	t.Log("locked at", time.Now().Sub(start).String())
 
+}
+
+func TestGetOrCreateIsAtomic(t *testing.T) {
+	c := New[int](500 * time.Millisecond)
+
+	var created atomic.Int32
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			value := c.GetOrCreate("shared", time.Second, func() int {
+				time.Sleep(time.Millisecond)
+				created.Add(1)
+				return 42
+			})
+			if value != 42 {
+				t.Errorf("unexpected value: %d", value)
+			}
+		}()
+	}
+
+	close(start)
+	wg.Wait()
+
+	if got := created.Load(); got != 1 {
+		t.Fatalf("expected fallback to run once, got %d", got)
+	}
 }

@@ -27,6 +27,11 @@ type KV interface {
 	Set(key string, value string, ttl time.Duration)
 	Get(key string) (string, bool)
 	Del(key string) error
+	SetIfAbsent(key string, value string, ttl time.Duration) (bool, error)
+	CompareAndSet(key string, expected, value string, ttl time.Duration) (bool, error)
+	CompareAndDelete(key string, expected string) (bool, error)
+	GetAndDelete(key string) (string, bool, error)
+	GetAndSet(key string, value string, ttl time.Duration) (string, bool, error)
 	SetStruct(key string, obj interface{}, ttl time.Duration) error
 	GetStruct(key string, p any) error
 	GetType() Type
@@ -39,6 +44,7 @@ type Lock interface {
 	TryLock(ttl time.Duration) bool
 	Unlock() error
 	Lock(ttl time.Duration, maxWait time.Duration) error
+	Refresh(ttl time.Duration) (bool, error)
 }
 
 func InitKV() KV {
