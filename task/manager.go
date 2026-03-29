@@ -18,6 +18,8 @@ import (
 	"time"
 )
 
+const taskCounterTTL = 365 * 24 * time.Hour
+
 type TaskManager struct {
 	c      *cron.Cron
 	logger *log.StdLogger
@@ -45,7 +47,6 @@ type Task struct {
 	id      cron.EntryID
 	counter int64
 	kv      kv.KV
-	lock    kv.Lock
 	logger  *log.StdLogger
 }
 
@@ -70,7 +71,6 @@ func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error
 	t := &Task{
 		taskId:  taskId,
 		counter: counter,
-		lock:    manager.kv.NewLock(taskId + ":lock"),
 		kv:      manager.kv,
 		logger:  log.NewStdLogger("allingo.task." + name),
 	}
@@ -123,24 +123,81 @@ func (manager *TaskManager) MustAdd(name, spec string, f func() error) {
 }
 
 func (task *Task) occupy() bool {
-	err := task.lock.Lock(time.Minute, time.Second)
-	if err != nil {
+	if ok, err := task.tryOccupy(); err != nil {
 		task.logger.Error(err)
 		return false
+	} else {
+		return ok
 	}
-	defer task.lock.Unlock()
-	var latestCounter int64 = 0
-	defer func() {
+}
+
+func (task *Task) tryOccupy() (bool, error) {
+	if task.counter == 0 {
+		ok, err := task.kv.SetIfAbsent(task.taskId, "1", taskCounterTTL)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			task.counter = 1
+			return true, nil
+		}
+	}
+
+	latestCounter, latestValue, ok, err := task.loadLatestCounter()
+	if err != nil {
+		return false, err
+	}
+	if !ok || latestCounter == 0 {
+		ok, err := task.kv.SetIfAbsent(task.taskId, "1", taskCounterTTL)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			task.counter = 1
+			return true, nil
+		}
+		latestCounter, _, ok, err = task.loadLatestCounter()
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			task.counter = latestCounter
+		}
+		return false, nil
+	}
+	if latestCounter != task.counter {
 		task.counter = latestCounter
-	}()
-	last, _ := task.kv.Get(task.taskId)
-	if last != "" {
-		latestCounter, err = strconv.ParseInt(last, 10, 64)
+		return false, nil
 	}
-	if latestCounter == 0 || latestCounter == task.counter {
-		latestCounter++
-		task.kv.Set(task.taskId, strconv.FormatInt(latestCounter, 10), 365*24*time.Hour)
-		return true
+
+	nextCounter := latestCounter + 1
+	ok, err = task.kv.CompareAndSet(task.taskId, latestValue, strconv.FormatInt(nextCounter, 10), taskCounterTTL)
+	if err != nil {
+		return false, err
 	}
-	return false
+	if ok {
+		task.counter = nextCounter
+		return true, nil
+	}
+
+	latestCounter, _, ok, err = task.loadLatestCounter()
+	if err != nil {
+		return false, err
+	}
+	if ok {
+		task.counter = latestCounter
+	}
+	return false, nil
+}
+
+func (task *Task) loadLatestCounter() (int64, string, bool, error) {
+	last, ok := task.kv.Get(task.taskId)
+	if !ok || last == "" {
+		return 0, "", false, nil
+	}
+	counter, err := strconv.ParseInt(last, 10, 64)
+	if err != nil {
+		return 0, last, false, err
+	}
+	return counter, last, true, nil
 }
