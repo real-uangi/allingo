@@ -20,9 +20,13 @@ type cacheItem[T any] struct {
 }
 
 func newCacheItem[T any](data T, ttl time.Duration) *cacheItem[T] {
+	expiration := int64(0)
+	if ttl > 0 {
+		expiration = time.Now().Add(ttl).UnixMilli()
+	}
 	return &cacheItem[T]{
 		Data:       data,
-		Expiration: time.Now().Add(ttl).UnixMilli(),
+		Expiration: expiration,
 	}
 }
 
@@ -31,7 +35,7 @@ func (c *Cache[T]) loadValidItemLocked(key string, now int64) (*cacheItem[T], bo
 	if !ok {
 		return nil, false
 	}
-	if item.Expiration < now {
+	if item.Expiration > 0 && item.Expiration < now {
 		delete(c.data, key)
 		return nil, false
 	}
@@ -192,7 +196,7 @@ func (c *Cache[T]) cleanup() error {
 		case <-ticker.C:
 			c.mu.RLock()
 			for k, v := range c.data {
-				if v.Expiration < now {
+				if v.Expiration > 0 && v.Expiration < now {
 					toDelete = append(toDelete, k)
 				}
 			}
@@ -223,5 +227,9 @@ func (c *Cache[T]) Expire(key string, ttl time.Duration) {
 	if !ok {
 		return
 	}
-	item.Expiration = time.Now().Add(ttl).UnixMilli()
+	if ttl > 0 {
+		item.Expiration = time.Now().Add(ttl).UnixMilli()
+		return
+	}
+	item.Expiration = 0
 }

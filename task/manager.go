@@ -61,7 +61,10 @@ func (manager *TaskManager) Add(name, spec string, f func() error) (*Task, error
 	var counter int64 = 0
 	var err error
 	taskId := "COCK_CLIENT:TASK:" + name
-	last, ok := manager.kv.Get(taskId)
+	last, ok, err := manager.kv.Get(taskId)
+	if err != nil {
+		return nil, err
+	}
 	if ok && last != "" {
 		counter, err = strconv.ParseInt(last, 10, 64)
 		if err != nil {
@@ -191,7 +194,10 @@ func (task *Task) tryOccupy() (bool, error) {
 }
 
 func (task *Task) loadLatestCounter() (int64, string, bool, error) {
-	last, ok := task.kv.Get(task.taskId)
+	last, ok, err := task.kv.Get(task.taskId)
+	if err != nil {
+		return 0, "", false, err
+	}
 	if !ok || last == "" {
 		return 0, "", false, nil
 	}
