@@ -795,6 +795,52 @@ func runKVContractTests(t *testing.T, factory kvFactory) {
 			t.Fatal("expected refreshed lock to expire eventually")
 		}
 	})
+
+	t.Run(factory.name+"/lock_unlock", func(t *testing.T) {
+		key := testKey(factory.name, "unlock")
+		owner := store.NewLock(key)
+		if !owner.TryLock(80 * time.Millisecond) {
+			t.Fatal("expected owner to acquire lock")
+		}
+		if err := owner.Unlock(); err != nil {
+			t.Fatalf("owner Unlock returned error: %v", err)
+		}
+
+		challenger := store.NewLock(key)
+		if !challenger.TryLock(80 * time.Millisecond) {
+			t.Fatal("expected challenger to acquire lock after owner unlock")
+		}
+		if err := challenger.Unlock(); err != nil {
+			t.Fatalf("challenger Unlock returned error: %v", err)
+		}
+
+		expiredKey := testKey(factory.name, "unlock-expired")
+		expiredOwner := store.NewLock(expiredKey)
+		if !expiredOwner.TryLock(50 * time.Millisecond) {
+			t.Fatal("expected expiredOwner to acquire lock")
+		}
+		time.Sleep(70 * time.Millisecond)
+		if err := expiredOwner.Unlock(); err != nil {
+			t.Fatalf("expected Unlock on expired lock without successor to return nil, got %v", err)
+		}
+
+		takenKey := testKey(factory.name, "unlock-taken")
+		firstOwner := store.NewLock(takenKey)
+		if !firstOwner.TryLock(50 * time.Millisecond) {
+			t.Fatal("expected firstOwner to acquire lock")
+		}
+		time.Sleep(70 * time.Millisecond)
+		secondOwner := store.NewLock(takenKey)
+		if !secondOwner.TryLock(80 * time.Millisecond) {
+			t.Fatal("expected secondOwner to acquire expired lock")
+		}
+		if err := firstOwner.Unlock(); err == nil {
+			t.Fatal("expected Unlock to fail when lock has been taken by another owner")
+		}
+		if err := secondOwner.Unlock(); err != nil {
+			t.Fatalf("expected secondOwner Unlock to succeed, got %v", err)
+		}
+	})
 }
 
 func TestLocalKVSetIfAbsentConcurrent(t *testing.T) {

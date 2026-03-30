@@ -156,9 +156,15 @@ var (
 		return {1, current}
 	`)
 	unlockScript = redis.NewScript(`
-		if redis.call('get', KEYS[1]) == ARGV[1]
-		then return redis.call('del', KEYS[1])
-		else return 0 end;
+		local current = redis.call('get', KEYS[1])
+		if not current then
+			return 2
+		end
+		if current == ARGV[1] then
+			redis.call('del', KEYS[1])
+			return 1
+		end
+		return 0
 	`)
 	refreshLockScript = redis.NewScript(`
 		if tonumber(ARGV[2]) <= 0 then
