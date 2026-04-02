@@ -8,9 +8,10 @@
 package holder
 
 import (
+	"sync"
+
 	"github.com/real-uangi/allingo/common/concurrent"
 	"github.com/real-uangi/allingo/common/goid"
-	"sync"
 )
 
 type holder struct {
