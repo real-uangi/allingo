@@ -9,11 +9,12 @@ package db
 
 import (
 	"errors"
+	"os"
+	"time"
+
 	"github.com/real-uangi/allingo/common/env"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
-	"time"
 )
 
 // Manager 数据库连接管理 database/sql 级别的DB,Stmt都是并发安全的
@@ -32,7 +33,7 @@ func InitDataSource() (*Manager, error) {
 	gormConfig := &gorm.Config{
 		Logger:                 logger,
 		AllowGlobalUpdate:      false,
-		PrepareStmt:            true,
+		PrepareStmt:            false,
 		SkipDefaultTransaction: false,
 	}
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
