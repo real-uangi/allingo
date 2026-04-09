@@ -40,9 +40,33 @@ func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	b.WriteString(entry.Time.Format("2006-01-02 15:04:05.000"))
 	b.WriteString(fmt.Sprintf(" %8d", entry.Data[FieldGoId]))
 	b.Write(f.middleInfos[entry.Level])
-	b.WriteString(entry.Message)
+	b.WriteString(formatMessage(entry))
 	b.WriteByte('\n')
 	return b.Bytes(), nil
+}
+
+func formatMessage(entry *logrus.Entry) string {
+	message := entry.Message
+	errText, ok := getEntryError(entry)
+	if !ok || errText == "" || strings.Contains(message, errText) {
+		return message
+	}
+	if message == "" {
+		return "err=" + errText
+	}
+	return message + " | err=" + errText
+}
+
+func getEntryError(entry *logrus.Entry) (string, bool) {
+	value, ok := entry.Data[logrus.ErrorKey]
+	if !ok || value == nil {
+		return "", false
+	}
+
+	if err, ok := value.(error); ok {
+		return err.Error(), true
+	}
+	return fmt.Sprint(value), true
 }
 
 func (f *customFormatter) preSetMiddles(loggerName string) {
