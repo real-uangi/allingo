@@ -36,7 +36,10 @@ func InitDataSource() (*Manager, error) {
 		PrepareStmt:            false,
 		SkipDefaultTransaction: false,
 	}
-	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true,
+	}), gormConfig)
 	if err != nil {
 		return nil, err
 	}
