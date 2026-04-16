@@ -9,12 +9,20 @@
 package auth
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/real-uangi/allingo/common/result"
+	"crypto/subtle"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/real-uangi/allingo/common/env"
+	"github.com/real-uangi/allingo/common/result"
+)
+
+const (
+	internalTokenHeader = "X-Internal-Token"
+	internalTokenEnv    = "INTERNAL_AUTH_TOKEN"
 )
 
 var privateIPBlocks = []*net.IPNet{
@@ -66,7 +74,25 @@ func isHostValid(host string) bool {
 	return isInternalIP(ipStr)
 }
 
+func hasValidInternalTokenHeader(c *gin.Context) bool {
+	expected := strings.TrimSpace(env.Get(internalTokenEnv))
+	if expected == "" {
+		return false
+	}
+
+	actual := strings.TrimSpace(c.GetHeader(internalTokenHeader))
+	if actual == "" {
+		return false
+	}
+
+	return subtle.ConstantTimeCompare([]byte(actual), []byte(expected)) == 1
+}
+
 func InternalOnlyMiddleware(c *gin.Context) {
+	if hasValidInternalTokenHeader(c) {
+		c.Next()
+		return
+	}
 
 	if !isInternalIP(c.ClientIP()) {
 		c.AbortWithStatusJSON(http.StatusForbidden, result.New(http.StatusForbidden, "Access denied: internal IPs only"))
