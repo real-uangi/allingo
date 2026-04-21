@@ -13,6 +13,10 @@ import (
 	"github.com/real-uangi/allingo/common/db/helper/page"
 	"github.com/real-uangi/allingo/common/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"regexp"
+	"sort"
+	"strings"
 )
 
 type BaseMapper[T ModelConstraint] interface {
@@ -34,6 +38,8 @@ type BaseMapper[T ModelConstraint] interface {
 	Transaction(f func(tx *gorm.DB) error) error
 
 	GetConn() *gorm.DB
+
+	GetSafeOrderBy(raw string) clause.OrderBy
 }
 
 type BaseMapperImpl[T ModelConstraint] struct {
@@ -42,6 +48,8 @@ type BaseMapperImpl[T ModelConstraint] struct {
 	conn         *gorm.DB
 	logger       *log.StdLogger
 }
+
+var sqlIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 func NewBaseMapper[T ModelConstraint](manager *Manager) BaseMapper[T] {
 	m := new(BaseMapperImpl[T])
@@ -88,10 +96,7 @@ func (m *BaseMapperImpl[T]) SelectById(id uuid.UUID) (*T, error) {
 func (m *BaseMapperImpl[T]) GetPage(input page.InputInterface) (*page.Output[T], error) {
 	pageIndex := input.GetPageIndex()
 	pageSize := input.GetPageSize()
-	orderBy := input.GetOrderBy()
-	if orderBy == "" {
-		orderBy = "id"
-	}
+	orderBy := m.GetSafeOrderBy(input.GetOrderBy())
 	input.ResetPageInfo()
 	var total int64
 	countResult := m.conn.Model(m.emptyEntity).Where(input).Order("created_at").Count(&total)
@@ -115,6 +120,98 @@ func (m *BaseMapperImpl[T]) GetPage(input page.InputInterface) (*page.Output[T],
 		return nil, err
 	}
 	return output, nil
+}
+
+func (m *BaseMapperImpl[T]) GetSafeOrderBy(raw string) clause.OrderBy {
+	fallback := "id"
+	allowed := map[string]struct{}{
+		fallback: {},
+	}
+
+	stmt := &gorm.Statement{DB: m.conn}
+	if err := stmt.Parse(m.emptyEntity); err == nil && stmt.Schema != nil {
+		allowed = make(map[string]struct{}, len(stmt.Schema.FieldsByDBName))
+		for dbName := range stmt.Schema.FieldsByDBName {
+			if dbName == "" {
+				continue
+			}
+			allowed[dbName] = struct{}{}
+		}
+
+		if stmt.Schema.PrioritizedPrimaryField != nil && stmt.Schema.PrioritizedPrimaryField.DBName != "" {
+			fallback = stmt.Schema.PrioritizedPrimaryField.DBName
+		} else if _, exists := allowed[fallback]; !exists {
+			fallback = firstAllowedColumn(allowed)
+		}
+	}
+
+	columns := parseOrderByColumns(raw, allowed, fallback)
+	return clause.OrderBy{
+		Columns: columns,
+	}
+}
+
+func parseOrderByColumns(raw string, allowed map[string]struct{}, fallback string) []clause.OrderByColumn {
+	orderBy := strings.TrimSpace(raw)
+	if orderBy == "" {
+		return []clause.OrderByColumn{{Column: clause.Column{Name: fallback}}}
+	}
+
+	segments := strings.Split(orderBy, ",")
+	columns := make([]clause.OrderByColumn, 0, len(segments))
+	for _, segment := range segments {
+		item := strings.TrimSpace(segment)
+		if item == "" {
+			continue
+		}
+
+		parts := strings.Fields(item)
+		if len(parts) == 0 || len(parts) > 2 {
+			continue
+		}
+
+		field := parts[0]
+		if !sqlIdentifierPattern.MatchString(field) {
+			continue
+		}
+		if _, exists := allowed[field]; !exists {
+			continue
+		}
+
+		desc := false
+		if len(parts) == 2 {
+			direction := strings.ToLower(parts[1])
+			switch direction {
+			case "asc":
+			case "desc":
+				desc = true
+			default:
+				continue
+			}
+		}
+
+		columns = append(columns, clause.OrderByColumn{
+			Column: clause.Column{Name: field},
+			Desc:   desc,
+		})
+	}
+
+	if len(columns) == 0 {
+		return []clause.OrderByColumn{{Column: clause.Column{Name: fallback}}}
+	}
+	return columns
+}
+
+func firstAllowedColumn(allowed map[string]struct{}) string {
+	keys := make([]string, 0, len(allowed))
+	for k := range allowed {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	if len(keys) == 0 {
+		return "id"
+	}
+	return keys[0]
 }
 
 func (m *BaseMapperImpl[T]) UpdateByPrimaryKeySelective(t *T) (int64, error) {
