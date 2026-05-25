@@ -8,7 +8,9 @@
 package log
 
 import (
+	"bytes"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -26,4 +28,17 @@ func TestNew(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
+}
+
+func TestExitTimeoutFlushesQueuedLogs(t *testing.T) {
+	var output bytes.Buffer
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.logger.SetOutput(&output)
+
+	logger.Info("flush before exit")
+	ExitTimeout(1)
+
+	if !strings.Contains(output.String(), "flush before exit") {
+		t.Fatalf("expected queued log to be flushed, got %q", output.String())
+	}
 }

@@ -76,4 +76,5 @@ func (app *App) Run() {
 	}
 
 	async.ExitTimeout(5)
+	log.ExitTimeout(5)
 }

@@ -11,6 +11,7 @@ package log
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -36,6 +37,7 @@ func putLogWrapper(wrapper *asyncLogWrapper) {
 	wrapper.Level = 0
 	wrapper.Entry = nil
 	wrapper.Format = ""
+	wrapper.done = nil
 	if wrapper.Args != nil {
 		wrapper.Args = wrapper.Args[:0]
 	}
@@ -49,6 +51,7 @@ type asyncLogWrapper struct {
 	Entry  *logrus.Entry
 	Format string
 	Args   []interface{}
+	done   chan struct{}
 }
 
 func (wrapper *asyncLogWrapper) queue() {
@@ -92,12 +95,38 @@ func (wrapper *asyncLogWrapper) flush() {
 	}
 }
 
+func ExitTimeout(second int) {
+	done := make(chan struct{})
+	wrapper := getLogWrapper()
+	wrapper.done = done
+
+	timer := time.NewTimer(time.Duration(second) * time.Second)
+	defer timer.Stop()
+
+	select {
+	case logQueue <- wrapper:
+	case <-timer.C:
+		putLogWrapper(wrapper)
+		return
+	}
+
+	select {
+	case <-done:
+	case <-timer.C:
+	}
+}
+
 func init() {
 	go handleLog()
 }
 
 func handleLog() {
 	for wrapper := range logQueue {
+		if wrapper.done != nil {
+			close(wrapper.done)
+			putLogWrapper(wrapper)
+			continue
+		}
 		wrapper.flush()
 	}
 }
