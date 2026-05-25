@@ -9,9 +9,10 @@
 package async
 
 import (
+	"runtime"
+
 	"github.com/panjf2000/ants/v2"
 	"github.com/real-uangi/allingo/common/env"
-	"runtime"
 )
 
 var pool *ants.Pool

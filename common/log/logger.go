@@ -9,11 +9,12 @@ package log
 
 import (
 	"fmt"
-	"github.com/real-uangi/allingo/common/goid"
-	"github.com/sirupsen/logrus"
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/real-uangi/allingo/common/goid"
+	"github.com/sirupsen/logrus"
 )
 
 type StdLogger struct {

@@ -10,8 +10,9 @@ package base62
 
 import (
 	"errors"
-	"github.com/google/uuid"
 	"math/big"
+
+	"github.com/google/uuid"
 )
 
 func EncodeUUID(u uuid.UUID) string {

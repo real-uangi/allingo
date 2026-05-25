@@ -10,14 +10,15 @@ package app
 
 import (
 	"context"
-	"github.com/real-uangi/allingo/common/async"
-	"github.com/real-uangi/allingo/common/log"
-	"go.uber.org/fx"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/real-uangi/allingo/common/async"
+	"github.com/real-uangi/allingo/common/log"
+	"go.uber.org/fx"
 )
 
 type App struct {

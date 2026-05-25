@@ -8,11 +8,12 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/real-uangi/allingo/common/business"
 	"github.com/real-uangi/allingo/common/result"
-	"net/http"
 )
 
 func JsonFunc[I any, O any](f func(I) (O, error)) gin.HandlerFunc {

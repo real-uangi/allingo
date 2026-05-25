@@ -9,8 +9,9 @@
 package cache
 
 import (
-	"github.com/real-uangi/allingo/common/business"
 	"time"
+
+	"github.com/real-uangi/allingo/common/business"
 )
 
 // TryLock attempts to acquire a lock for the given key with the specified TTL.

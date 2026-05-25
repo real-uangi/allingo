@@ -9,10 +9,11 @@
 package async_test
 
 import (
-	"github.com/real-uangi/allingo/common/async"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/real-uangi/allingo/common/async"
 )
 
 func TestAsync(t *testing.T) {

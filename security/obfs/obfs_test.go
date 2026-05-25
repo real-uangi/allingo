@@ -9,9 +9,10 @@
 package obfs_test
 
 import (
-	"github.com/real-uangi/allingo/security/obfs"
 	"math/rand"
 	"testing"
+
+	"github.com/real-uangi/allingo/security/obfs"
 )
 
 const testSecret int64 = 0x028bce36e931eeb9

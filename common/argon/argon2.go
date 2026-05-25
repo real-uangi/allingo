@@ -12,10 +12,11 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"strings"
+
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
 	"golang.org/x/crypto/argon2"
-	"strings"
 )
 
 var logger = log.NewStdLogger("common.argon2")

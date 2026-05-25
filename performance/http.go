@@ -9,13 +9,14 @@
 package performance
 
 import (
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (

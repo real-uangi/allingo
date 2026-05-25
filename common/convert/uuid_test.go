@@ -9,9 +9,10 @@
 package convert_test
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/real-uangi/allingo/common/convert"
-	"testing"
 )
 
 func TestUUIDToBase64(t *testing.T) {

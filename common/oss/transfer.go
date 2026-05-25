@@ -9,10 +9,11 @@ package oss
 
 import (
 	"context"
-	"github.com/minio/minio-go/v7"
 	"io"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/minio/minio-go/v7"
 )
 
 func (m *Manager) Upload(fileName string, reader io.Reader, options UploadOptions) (info *minio.UploadInfo, err error) {

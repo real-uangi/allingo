@@ -9,9 +9,10 @@
 package log
 
 import (
-	"github.com/sirupsen/logrus"
 	"io"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 )
 
 // 防止 stdout IO 干扰测试

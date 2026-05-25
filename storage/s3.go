@@ -9,9 +9,10 @@
 package storage
 
 import (
+	"io"
+
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/oss"
-	"io"
 )
 
 type S3Storage struct {

@@ -8,9 +8,10 @@
 package result
 
 import (
-	"github.com/real-uangi/allingo/common/convert"
 	"net/http"
 	"time"
+
+	"github.com/real-uangi/allingo/common/convert"
 )
 
 type RawField []byte

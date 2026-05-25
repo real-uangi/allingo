@@ -8,10 +8,11 @@
 package db
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/real-uangi/allingo/common/convert"
 	"github.com/real-uangi/allingo/common/db/helper/page"
-	"testing"
 )
 
 type AExample struct {

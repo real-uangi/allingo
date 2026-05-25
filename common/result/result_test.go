@@ -11,8 +11,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/real-uangi/allingo/common/business"
 	"testing"
+
+	"github.com/real-uangi/allingo/common/business"
 )
 
 func TestFromError(t *testing.T) {

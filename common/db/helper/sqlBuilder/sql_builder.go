@@ -10,9 +10,10 @@ package sqlBuilder
 import (
 	"errors"
 	"fmt"
-	"github.com/real-uangi/allingo/common/db/helper/page"
 	"strconv"
 	"strings"
+
+	"github.com/real-uangi/allingo/common/db/helper/page"
 )
 
 type SqlBuilder struct {

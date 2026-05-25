@@ -9,8 +9,9 @@
 package log
 
 import (
-	"go.uber.org/fx/fxevent"
 	"time"
+
+	"go.uber.org/fx/fxevent"
 )
 
 type FxLogger struct {

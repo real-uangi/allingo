@@ -12,6 +12,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/real-uangi/allingo/common/api"
 	"github.com/real-uangi/allingo/common/auth"
@@ -24,10 +29,6 @@ import (
 	"github.com/real-uangi/allingo/utils/iptools"
 	"github.com/real-uangi/fxtrategy"
 	"go.uber.org/fx"
-	"net"
-	"net/http"
-	"os"
-	"strings"
 )
 
 var httpLogger = log.NewStdLogger("http")

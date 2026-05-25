@@ -8,11 +8,12 @@
 package api
 
 import (
+	"os"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/real-uangi/allingo/common/constants"
 	"github.com/real-uangi/allingo/common/holder"
-	"os"
-	"strconv"
 )
 
 var CookieDomain = os.Getenv("COOKIE_DOMAIN")

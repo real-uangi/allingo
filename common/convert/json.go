@@ -10,8 +10,9 @@ package convert
 
 import (
 	"bytes"
-	"github.com/bytedance/sonic"
 	"io"
+
+	"github.com/bytedance/sonic"
 )
 
 var jsonApi = sonic.ConfigDefault

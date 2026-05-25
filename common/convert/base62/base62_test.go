@@ -9,10 +9,11 @@
 package base62_test
 
 import (
-	"github.com/google/uuid"
-	"github.com/real-uangi/allingo/common/convert/base62"
 	"math/rand"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/real-uangi/allingo/common/convert/base62"
 )
 
 var (

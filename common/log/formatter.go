@@ -10,8 +10,9 @@ package log
 import (
 	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 // 设置颜色

@@ -9,8 +9,9 @@
 package storage
 
 import (
-	"github.com/real-uangi/allingo/common/env"
 	"io"
+
+	"github.com/real-uangi/allingo/common/env"
 )
 
 type Storage interface {

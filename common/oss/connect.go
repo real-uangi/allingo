@@ -9,12 +9,13 @@ package oss
 
 import (
 	"context"
+	"net/http"
+	"time"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
-	"net/http"
-	"time"
 )
 
 type Manager struct {

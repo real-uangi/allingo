@@ -8,8 +8,9 @@
 package db
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Model is recommended basic fields for every table

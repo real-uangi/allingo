@@ -9,9 +9,10 @@
 package log
 
 import (
-	"github.com/sirupsen/logrus"
 	"sync"
 	"sync/atomic"
+
+	"github.com/sirupsen/logrus"
 )
 
 var dropped = new(atomic.Int64)

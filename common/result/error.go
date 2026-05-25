@@ -8,8 +8,9 @@
 package result
 
 import (
-	"github.com/real-uangi/allingo/common/business"
 	"net/http"
+
+	"github.com/real-uangi/allingo/common/business"
 )
 
 func FromError(err error) (int, *Result[RawField]) {

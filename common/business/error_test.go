@@ -9,9 +9,10 @@
 package business_test
 
 import (
-	"github.com/real-uangi/allingo/common/business"
 	"net/http"
 	"testing"
+
+	"github.com/real-uangi/allingo/common/business"
 )
 
 func genError() error {

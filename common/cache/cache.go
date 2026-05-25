@@ -8,9 +8,10 @@
 package cache
 
 import (
-	"github.com/real-uangi/allingo/common/async"
 	"sync"
 	"time"
+
+	"github.com/real-uangi/allingo/common/async"
 )
 
 type cacheItem[T any] struct {
