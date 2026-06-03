@@ -42,13 +42,8 @@ func putLogWrapper(wrapper *LogWrapper) {
 	wrapper.err = nil
 	wrapper.format = ""
 	wrapper.done = nil
-	for i := range wrapper.args {
-		wrapper.args[i] = nil
-	}
-	wrapper.args = nil
-	for key := range wrapper.fields {
-		delete(wrapper.fields, key)
-	}
+	wrapper.args = wrapper.args[:0]
+	wrapper.fields = nil
 	logWrapperPool.Put(wrapper)
 }
 
@@ -205,11 +200,11 @@ func (wrapper *LogWrapper) flush() {
 
 	wrapper.logger.state.mu.Lock()
 	out := wrapper.logger.state.out
+	wrapper.logger.state.mu.Unlock()
 	if out == nil {
 		out = os.Stdout
 	}
 	_, _ = out.Write(output)
-	wrapper.logger.state.mu.Unlock()
 
 	fireHooks(entry)
 }
@@ -262,7 +257,23 @@ func handleLog() {
 			putLogWrapper(wrapper)
 			continue
 		}
+		// 保存终止前需要的信息（flush 会清空 wrapper）
+		isFatal := wrapper.level == FatalLevel
+		isPanic := wrapper.level == PanicLevel
+		var panicMsg string
+		if isPanic {
+			panicMsg = fmt.Sprint(wrapper.args...)
+			if wrapper.format != "" {
+				panicMsg = fmt.Sprintf(wrapper.format, wrapper.args...)
+			}
+		}
 		wrapper.flush()
+		if isFatal {
+			os.Exit(1)
+		}
+		if isPanic {
+			panic(panicMsg)
+		}
 	}
 }
 
