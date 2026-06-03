@@ -15,7 +15,6 @@ require (
 	github.com/real-uangi/fxtrategy v1.3.0
 	github.com/redis/go-redis/v9 v9.10.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/sirupsen/logrus v1.9.3
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.45.0
 	gorm.io/driver/postgres v1.6.0

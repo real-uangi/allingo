@@ -11,75 +11,54 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 // 设置颜色
 var levelDec = [7]string{
-	logrus.PanicLevel: "\u001B[1;35m[P]\u001B[0m", // 紫色
-	logrus.FatalLevel: "\u001B[1;31m[F]\u001B[0m", // 红色
-	logrus.ErrorLevel: "\u001B[31m[E]\u001B[0m",   // 深红
-	logrus.WarnLevel:  "\u001B[33m[W]\u001B[0m",   // 黄色
-	logrus.InfoLevel:  "\u001B[32m[I]\u001B[0m",   // 绿色
-	logrus.DebugLevel: "\u001B[36m[D]\u001B[0m",   // 青色
-	logrus.TraceLevel: "\u001B[34m[T]\u001B[0m",   // 蓝色
+	PanicLevel: "\u001B[1;35m[P]\u001B[0m", // 紫色
+	FatalLevel: "\u001B[1;31m[F]\u001B[0m", // 红色
+	ErrorLevel: "\u001B[31m[E]\u001B[0m",   // 深红
+	WarnLevel:  "\u001B[33m[W]\u001B[0m",   // 黄色
+	InfoLevel:  "\u001B[32m[I]\u001B[0m",   // 绿色
+	DebugLevel: "\u001B[36m[D]\u001B[0m",   // 青色
+	TraceLevel: "\u001B[34m[T]\u001B[0m",   // 蓝色
 }
 
-type customFormatter struct {
-	middleInfos [][]byte
-}
-
-func newFormatter(loggerName string) *customFormatter {
-	formatter := new(customFormatter)
-	formatter.preSetMiddles(loggerName)
-	return formatter
-}
-
-func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	var b bytes.Buffer
-	b.WriteString(entry.Time.Format("2006-01-02 15:04:05.000"))
-	b.WriteString(fmt.Sprintf(" %8d", entry.Data[FieldGoId]))
-	b.Write(f.middleInfos[entry.Level])
-	b.WriteString(formatMessage(entry))
-	b.WriteByte('\n')
-	return b.Bytes(), nil
-}
-
-func formatMessage(entry *logrus.Entry) string {
-	message := entry.Message
-	errText, ok := getEntryError(entry)
-	if !ok || errText == "" || strings.Contains(message, errText) {
-		return message
-	}
-	if message == "" {
-		return "err=" + errText
-	}
-	return message + " | err=" + errText
-}
-
-func getEntryError(entry *logrus.Entry) (string, bool) {
-	value, ok := entry.Data[logrus.ErrorKey]
-	if !ok || value == nil {
-		return "", false
-	}
-
-	if err, ok := value.(error); ok {
-		return err.Error(), true
-	}
-	return fmt.Sprint(value), true
-}
-
-func (f *customFormatter) preSetMiddles(loggerName string) {
-	f.middleInfos = make([][]byte, len(levelDec))
+func newMiddleInfos(loggerName string) [][]byte {
+	middleInfos := make([][]byte, len(levelDec))
 	for i := 0; i < len(levelDec); i++ {
 		buffer := bytes.NewBuffer(make([]byte, 0, 128))
 		buffer.WriteString(" -- ")
 		buffer.WriteString(fmt.Sprintf("\u001B[36;1m%-40s\u001B[0m ", shorterName(loggerName, 40)))
 		buffer.WriteString(levelDec[i])
 		buffer.Write([]byte(" "))
-		f.middleInfos[i] = buffer.Bytes()
+		middleInfos[i] = buffer.Bytes()
 	}
+	return middleInfos
+}
+
+func formatEntry(entry Entry, middleInfos [][]byte) []byte {
+	var b bytes.Buffer
+	b.WriteString(entry.Time.Format("2006-01-02 15:04:05.000"))
+	b.WriteString(fmt.Sprintf(" %8d", entry.GoID))
+	b.Write(middleInfos[entry.Level])
+	b.WriteString(formatMessage(entry.Message, entry.Err))
+	b.WriteByte('\n')
+	return b.Bytes()
+}
+
+func formatMessage(message string, err error) string {
+	if err == nil {
+		return message
+	}
+	errText := err.Error()
+	if errText == "" || strings.Contains(message, errText) {
+		return message
+	}
+	if message == "" {
+		return "err=" + errText
+	}
+	return message + " | err=" + errText
 }
 
 func shorterName(input string, threshold int) string {
@@ -102,4 +81,15 @@ func shorterName(input string, threshold int) string {
 		handled++
 	}
 	return input
+}
+
+func cloneFields(fields Fields) Fields {
+	if len(fields) == 0 {
+		return nil
+	}
+	cloned := make(Fields, len(fields))
+	for key, value := range fields {
+		cloned[key] = value
+	}
+	return cloned
 }

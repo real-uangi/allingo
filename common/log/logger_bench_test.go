@@ -11,14 +11,7 @@ package log
 import (
 	"io"
 	"testing"
-
-	"github.com/sirupsen/logrus"
 )
-
-// 防止 stdout IO 干扰测试
-func init() {
-	logrus.SetOutput(io.Discard)
-}
 
 func BenchmarkArgsCopy(b *testing.B) {
 	src := []interface{}{"a", 1, 2, 3, "b"}
@@ -33,21 +26,11 @@ func BenchmarkArgsCopy(b *testing.B) {
 
 func BenchmarkAsyncLoggerInfof(b *testing.B) {
 	sl := NewStdLogger("test")
+	sl.SetOutput(io.Discard)
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.Infof("hello %d %s", i, "world")
-	}
-}
-
-func BenchmarkLogrusSyncInfof(b *testing.B) {
-	logger := logrus.New()
-	logger.SetOutput(io.Discard)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		logger.Infof("hello %d %s", i, "world")
 	}
 }
