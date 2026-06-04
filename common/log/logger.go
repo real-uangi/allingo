@@ -200,5 +200,6 @@ func (sl *StdLogger) wrapper() *LogWrapper {
 	wrapper.logger = sl
 	wrapper.time = time.Now()
 	wrapper.goID = goid.Get()
+	fillGlobalFields(wrapper)
 	return wrapper
 }

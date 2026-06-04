@@ -4,8 +4,10 @@
 flowchart TD
     A["Caller uses StdLogger<br/>Trace/Debug/Info/Warn/Error/Fatal/Panic/Print"] --> B["getLogWrapper()<br/>reuse LogWrapper from sync.Pool"]
     A2["Caller uses StdLogger.WithField(s)"] --> B
-    B --> C["Attach event state<br/>logger, go_id, level, format, args, fields"]
-    C --> D{"Level"}
+    B --> C["Attach event state<br/>logger, go_id"]
+    C --> C2["Run global field fillers<br/>in registration order"]
+    C2 --> C3["Attach explicit fields, level,<br/>format, args"]
+    C3 --> D{"Level"}
 
     D -->|"Trace / Debug / Info"| F["bestEffortQueue()"]
     F --> G{"logQueue has capacity?"}
@@ -62,3 +64,5 @@ sequenceDiagram
 - `Warn`, `Error`, `Fatal`, and `Panic` block until they are accepted into the queue.
 - Hooks run in the log worker after console output, so accepted logs and their hooks before the barrier complete before `ExitTimeout` returns.
 - Structured fields are delivered to hooks and are not rendered in console output.
+- Global field fillers run in `StdLogger.wrapper()` before explicit `WithField(s)`, so explicit fields override same-key global fields.
+- Multiple global field fillers are supported and run in registration order; later fillers win on same-key writes.

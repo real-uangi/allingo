@@ -143,6 +143,184 @@ func TestWithFieldsSnapshotsCallerMap(t *testing.T) {
 	}
 }
 
+func TestFieldFillersAddFieldsToPlainLoggerEntries(t *testing.T) {
+	resetHooksForTest()
+	resetFieldFillersForTest()
+	t.Cleanup(resetHooksForTest)
+	t.Cleanup(resetFieldFillersForTest)
+
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.SetOutput(io.Discard)
+
+	entries := make(chan Entry, 1)
+	AddHook([]Level{InfoLevel}, func(entry Entry) error {
+		entries <- entry
+		return nil
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("trace_id", "trace-1")
+	})
+
+	logger.Info("plain")
+	ExitTimeout(1)
+
+	entry := receiveEntry(t, entries)
+	if entry.Fields["trace_id"] != "trace-1" {
+		t.Fatalf("expected filler field, got %#v", entry.Fields)
+	}
+}
+
+func TestFieldFillersRunInOrderAndLaterFillerWins(t *testing.T) {
+	resetHooksForTest()
+	resetFieldFillersForTest()
+	t.Cleanup(resetHooksForTest)
+	t.Cleanup(resetFieldFillersForTest)
+
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.SetOutput(io.Discard)
+
+	entries := make(chan Entry, 1)
+	AddHook([]Level{InfoLevel}, func(entry Entry) error {
+		entries <- entry
+		return nil
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("order", "first")
+		wrapper.WithField("first", true)
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("order", "second")
+		wrapper.WithField("second", true)
+	})
+
+	logger.Info("ordered")
+	ExitTimeout(1)
+
+	entry := receiveEntry(t, entries)
+	if entry.Fields["order"] != "second" {
+		t.Fatalf("expected later filler to win, got %#v", entry.Fields)
+	}
+	if entry.Fields["first"] != true || entry.Fields["second"] != true {
+		t.Fatalf("expected both fillers to run, got %#v", entry.Fields)
+	}
+}
+
+func TestExplicitWithFieldOverridesFieldFiller(t *testing.T) {
+	resetHooksForTest()
+	resetFieldFillersForTest()
+	t.Cleanup(resetHooksForTest)
+	t.Cleanup(resetFieldFillersForTest)
+
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.SetOutput(io.Discard)
+
+	entries := make(chan Entry, 1)
+	AddHook([]Level{InfoLevel}, func(entry Entry) error {
+		entries <- entry
+		return nil
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("tenant", "global")
+	})
+
+	logger.WithField("tenant", "explicit").Info("override")
+	ExitTimeout(1)
+
+	entry := receiveEntry(t, entries)
+	if entry.Fields["tenant"] != "explicit" {
+		t.Fatalf("expected explicit field to override filler, got %#v", entry.Fields)
+	}
+}
+
+func TestFieldFillerFieldsDoNotRenderToConsole(t *testing.T) {
+	resetHooksForTest()
+	resetFieldFillersForTest()
+	t.Cleanup(resetHooksForTest)
+	t.Cleanup(resetFieldFillersForTest)
+
+	var output bytes.Buffer
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.SetOutput(&output)
+
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("secret", "filler-secret")
+	})
+
+	logger.Info("console")
+	ExitTimeout(1)
+
+	if strings.Contains(output.String(), "filler-secret") {
+		t.Fatalf("expected filler field to stay out of console output, got %q", output.String())
+	}
+}
+
+func TestFieldFillerPanicDoesNotStopLaterFillers(t *testing.T) {
+	resetHooksForTest()
+	resetFieldFillersForTest()
+	t.Cleanup(resetHooksForTest)
+	t.Cleanup(resetFieldFillersForTest)
+
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.SetOutput(io.Discard)
+
+	entries := make(chan Entry, 1)
+	AddHook([]Level{InfoLevel}, func(entry Entry) error {
+		entries <- entry
+		return nil
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		panic("filler panicked")
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("after_panic", true)
+	})
+
+	logger.Info("panic")
+	ExitTimeout(1)
+
+	entry := receiveEntry(t, entries)
+	if entry.Fields["after_panic"] != true {
+		t.Fatalf("expected later filler to run, got %#v", entry.Fields)
+	}
+	if FieldFillerErrorCount() != 1 {
+		t.Fatalf("expected one filler error, got %d", FieldFillerErrorCount())
+	}
+}
+
+func TestFieldFillerFieldsDoNotLeakAcrossResetAndPooledReuse(t *testing.T) {
+	resetHooksForTest()
+	resetFieldFillersForTest()
+	t.Cleanup(resetHooksForTest)
+	t.Cleanup(resetFieldFillersForTest)
+
+	logger := NewStdLogger("allingo.common.log.application.TestLogger")
+	logger.SetOutput(io.Discard)
+
+	entries := make(chan Entry, 2)
+	AddHook([]Level{InfoLevel}, func(entry Entry) error {
+		entries <- entry
+		return nil
+	})
+	AddFieldFiller(func(wrapper *LogWrapper) {
+		wrapper.WithField("global", "set")
+	})
+
+	logger.Info("with filler")
+	ExitTimeout(1)
+	resetFieldFillersForTest()
+	logger.Info("without filler")
+	ExitTimeout(1)
+
+	first := receiveEntry(t, entries)
+	second := receiveEntry(t, entries)
+	if first.Fields["global"] != "set" {
+		t.Fatalf("expected first entry filler field, got %#v", first.Fields)
+	}
+	if len(second.Fields) != 0 {
+		t.Fatalf("expected no leaked filler fields, got %#v", second.Fields)
+	}
+}
+
 func TestInterfaceWorksWithStdLoggerAndLogWrapper(t *testing.T) {
 	resetHooksForTest()
 	t.Cleanup(resetHooksForTest)
