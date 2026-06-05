@@ -50,6 +50,12 @@ func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		sql, _ := fc()
 		l.Errorf(err, "error occurs when executing sql :%s", sql)
+	} else if execTime := time.Since(begin).Milliseconds(); execTime > 200 {
+		sql, rows := fc()
+		l.WithFields(map[string]interface{}{
+			"exec_time":     execTime,
+			"rows_affected": rows,
+		}).Warnf("SLOW SQL: %s", sql)
 	} else if isDev {
 		sql, rows := fc()
 		if len(sql) < 6 {
@@ -57,6 +63,7 @@ func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 		}
 		l.Infof("[%d rows in %.3f s] %s", rows, time.Since(begin).Seconds(), l.spaceReplacer.Replace(sql))
 	}
+
 }
 
 func newLogger() *dbLogger {
