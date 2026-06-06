@@ -22,9 +22,7 @@ type Manager struct {
 	db *gorm.DB
 }
 
-var logger = newLogger()
-
-func InitDataSource() (*Manager, error) {
+func InitDataSource(logger *Logger) (*Manager, error) {
 	dsn := os.Getenv("DB_DSN")
 	if dsn == "" {
 		return nil, errors.New("DB_DSN environment variable not set")

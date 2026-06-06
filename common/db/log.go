@@ -25,28 +25,28 @@ func init() {
 	isDev = env.Get(env.RunningMode) != env.ReleaseMode
 }
 
-type dbLogger struct {
+type Logger struct {
 	log.StdLogger
 	spaceReplacer *strings.Replacer
 }
 
-func (l *dbLogger) LogMode(level gormLogger.LogLevel) gormLogger.Interface {
+func (l *Logger) LogMode(level gormLogger.LogLevel) gormLogger.Interface {
 	return l
 }
 
-func (l *dbLogger) Info(ctx context.Context, s string, i ...interface{}) {
+func (l *Logger) Info(ctx context.Context, s string, i ...interface{}) {
 	l.StdLogger.Infof(s, i...)
 }
 
-func (l *dbLogger) Warn(ctx context.Context, s string, i ...interface{}) {
+func (l *Logger) Warn(ctx context.Context, s string, i ...interface{}) {
 	l.StdLogger.Warnf(s, i...)
 }
 
-func (l *dbLogger) Error(ctx context.Context, s string, i ...interface{}) {
+func (l *Logger) Error(ctx context.Context, s string, i ...interface{}) {
 	l.StdLogger.Errorf(nil, s, i...)
 }
 
-func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		sql, _ := fc()
 		l.Errorf(err, "error occurs when executing sql :%s", sql)
@@ -66,9 +66,9 @@ func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 
 }
 
-func newLogger() *dbLogger {
-	return &dbLogger{
-		StdLogger:     *log.For[dbLogger](),
+func newLogger() *Logger {
+	return &Logger{
+		StdLogger:     *log.For[Logger](),
 		spaceReplacer: strings.NewReplacer("\n", " ", "\r", " "),
 	}
 }

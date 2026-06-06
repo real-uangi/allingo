@@ -32,7 +32,7 @@ var initErr error
 
 func init() {
 	var err error
-	manager, err = InitDataSource()
+	manager, err = InitDataSource(newLogger())
 	if err != nil {
 		initErr = err
 		return
