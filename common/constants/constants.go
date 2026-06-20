@@ -13,11 +13,6 @@ const (
 )
 
 const (
-	DefaultProfile   = "dev"
-	ProfileActiveKey = "PROFILE_ACTIVE"
-)
-
-const (
 	DefaultGrayScale = "v1"
 	GrayScaleKey     = "GRAY_SCALE"
 	GrayScaleHeader  = "GRAY-SCALE"

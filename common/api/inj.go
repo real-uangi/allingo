@@ -13,11 +13,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/real-uangi/allingo/common/constants"
+	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/holder"
 )
 
 var CookieDomain = os.Getenv("COOKIE_DOMAIN")
-var SecureCookie = os.Getenv("PROFILE_ACTIVE") != "dev"
+var SecureCookie = env.Get(env.RunningMode) != env.DebugMode
 
 func GinContext() *gin.Context {
 	p, ok := holder.Get(constants.GinContextInjectionKey)
