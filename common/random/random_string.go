@@ -23,7 +23,8 @@ const baseLetters = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVW
 // mapped with a single "& 0x3F" operation.
 //
 // Performance trade-off (Apple M4, n=32):
-//   - 62-char + rejection sampling: ~6 026 ns/op for SecureString
+//   - 62-char + per-byte rejection sampling: ~6 026 ns/op for SecureString
+//   - 62-char + batched rejection sampling: ~1 114 ns/op for SecureString
 //   - 64-char runtime-filled table: ~206 ns/op for SecureString
 //   - FastString stays roughly the same at ~50 ns/op
 //
@@ -140,11 +141,12 @@ func String(n int) string {
 // It uses crypto/rand and the runtime-generated 64-character URL-safe alphabet.
 //
 // The 64-character table trades a small amount of uniformity for a large speed
-// gain: compared to a 62-character alphabet with rejection sampling, this
-// implementation is roughly 29x faster on the benchmark hardware. The two
-// runtime-selected filler characters appear slightly more often than the rest
-// (~0.3% entropy loss per character); the randomness source itself remains
-// cryptographic.
+// gain: compared to the original 62-character alphabet with per-byte rejection
+// sampling, this implementation is roughly 29x faster on the benchmark hardware.
+// The final switch from batched rejection sampling to the 64-character table
+// accounts for about a 5.4x speedup. The two runtime-selected filler characters
+// appear slightly more often than the rest (~0.3% entropy loss per character);
+// the randomness source itself remains cryptographic.
 // Use this for passwords, tokens, verification codes, and other security-sensitive values.
 func SecureString(n int) string {
 	b := make([]byte, n)
