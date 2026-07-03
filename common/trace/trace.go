@@ -18,7 +18,7 @@ func GetSpecific(gid int64) string {
 	if ok {
 		return v.(string)
 	}
-	return random.String(16)
+	return random.FastString(16)
 }
 
 func Get() string {
