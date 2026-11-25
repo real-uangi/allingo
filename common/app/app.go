@@ -10,11 +10,9 @@ package app
 
 import (
 	"context"
-	"os"
-	"os/signal"
+	"errors"
+	"fmt"
 	"sync"
-	"syscall"
-	"time"
 
 	"github.com/real-uangi/allingo/common/async"
 	"github.com/real-uangi/allingo/common/log"
@@ -28,6 +26,12 @@ type App struct {
 	onFxStart []func()
 	onFxStop  []func()
 	logger    *log.StdLogger
+}
+
+// RuntimeContext is supplied by RunContext for long-lived application work.
+// It is canceled before any stop hook, independently of the graceful-stop budget.
+type RuntimeContext struct {
+	Context context.Context
 }
 
 func (app *App) mustNotBooted() {
@@ -56,25 +60,52 @@ func (app *App) ProvideAnnotated(annotated fx.Annotated) {
 }
 
 func (app *App) Run() {
-
-	fxApp := fx.New(app.fxOps...)
-	err := fxApp.Start(context.Background())
-	if err != nil {
+	if err := app.RunContext(context.Background()); err != nil {
 		panic(err)
 	}
+}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-	<-quit
-	app.logger.Info("shutting down ...")
-	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancelFunc()
-	err = fxApp.Stop(timeoutCtx)
-	if err != nil {
-		app.logger.Errorf(err, "failed to stop fx container")
+// RunContext waits for cancellation, an operating-system signal, or Fx Shutdown.
+// StartTimeout and StopTimeout use the existing Fx options (15 seconds by default).
+// Shutdown gets a fresh context so cancelling the run still permits graceful cleanup.
+func (app *App) RunContext(ctx context.Context) error {
+	app.mu.Lock()
+	if app.booted {
+		app.mu.Unlock()
+		return errors.New("application already started")
 	}
-
-	async.ExitTimeout(5)
-	log.ExitTimeout(5)
+	app.booted = true
+	options := append([]fx.Option(nil), app.fxOps...)
+	app.mu.Unlock()
+	runningContext, cancelRun := context.WithCancel(ctx)
+	options = append(options, fx.Supply(RuntimeContext{Context: runningContext}))
+	defer func() {
+		cancelRun()
+		async.ExitTimeout(5)
+		log.ExitTimeout(5)
+	}()
+	fxApp := fx.New(options...)
+	startCtx, cancelStart := context.WithTimeout(runningContext, fxApp.StartTimeout())
+	err := fxApp.Start(startCtx)
+	cancelStart()
+	if err != nil {
+		cancelRun()
+		return err
+	}
+	var shutdown fx.ShutdownSignal
+	select {
+	case <-ctx.Done():
+	case shutdown = <-fxApp.Wait():
+	}
+	// A long HTTP drain can exhaust Fx's shared stop budget and prevent later
+	// hooks from running. Broadcast cancellation before starting that drain.
+	cancelRun()
+	app.logger.Info("shutting down ...")
+	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), fxApp.StopTimeout())
+	defer cancelFunc()
+	stopErr := fxApp.Stop(timeoutCtx)
+	if shutdown.ExitCode != 0 {
+		return errors.Join(fmt.Errorf("application requested exit code %d", shutdown.ExitCode), stopErr)
+	}
+	return stopErr
 }

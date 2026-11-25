@@ -196,7 +196,16 @@ func (wrapper *LogWrapper) flush() {
 	}
 
 	entry := wrapper.entry()
-	output := formatEntry(entry, wrapper.logger.middleInfos)
+	var output []byte
+	if Format(outputFormat.Load()) == JSONFormat {
+		var err error
+		output, err = formatJSONEntry(entry)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to format JSON log: %v\n", err)
+		}
+	} else {
+		output = formatEntry(entry, wrapper.logger.middleInfos)
+	}
 
 	wrapper.logger.state.mu.Lock()
 	out := wrapper.logger.state.out

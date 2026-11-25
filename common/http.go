@@ -9,7 +9,6 @@
 package common
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -20,75 +19,28 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/real-uangi/allingo/common/api"
 	"github.com/real-uangi/allingo/common/auth"
-	"github.com/real-uangi/allingo/common/debug"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
 	"github.com/real-uangi/allingo/common/ready"
 	"github.com/real-uangi/allingo/common/result"
 	"github.com/real-uangi/allingo/common/trace"
-	"github.com/real-uangi/allingo/utils/iptools"
 	"github.com/real-uangi/fxtrategy"
 	"go.uber.org/fx"
 )
 
 var httpLogger = log.NewStdLogger("http")
 
-func startHttpServer(lc fx.Lifecycle, engine *gin.Engine) {
-
-	addr := fmt.Sprintf(":%s", env.GetOrDefault("HTTP_PORT", "8080"))
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: engine,
+func startHttpServer(params httpServerParams) error {
+	config := legacyHTTPConfig()
+	if params.Config != nil {
+		config = *params.Config
 	}
-
-	certFile := env.Get("HTTP_CERT_FILE")
-	keyFile := env.Get("HTTP_KEY_FILE")
-
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			localIp, _ := iptools.GetBestMatchIp()
-			if localIp == "" {
-				localIp = "127.0.0.1"
-			}
-			if certFile != "" && keyFile != "" {
-				go func() {
-					err := srv.ListenAndServeTLS(certFile, keyFile)
-					if err != nil {
-						if err == http.ErrServerClosed {
-							httpLogger.Warn("http server closed")
-						} else {
-							httpLogger.Errorf(err, "http server failed: %+v", err)
-						}
-					}
-				}()
-				httpLogger.Infof("http server started on https://%s%s", localIp, srv.Addr)
-			} else {
-				go func() {
-					err := srv.ListenAndServe()
-					if err != nil {
-						if err == http.ErrServerClosed {
-							httpLogger.Warn("http server closed")
-						} else {
-							httpLogger.Error(err, "http server failed: "+err.Error())
-						}
-					}
-				}()
-				httpLogger.Infof("http server started on http://%s%s", localIp, srv.Addr)
-			}
-			if env.Get(env.RunningMode) != env.ReleaseMode {
-				pprofPort := env.GetOrDefault("PPROF_PORT", "18080")
-				httpLogger.Infof("pprof server started on http://%s:%s/debug/pprof", localIp, pprofPort)
-				go debug.RunPprofHttpServer(pprofPort)
-			}
-			return nil
-		},
-		OnStop: func(ctx context.Context) error {
-			if err := srv.Shutdown(ctx); err != nil {
-				httpLogger.Error(err, "failed to close http server")
-			}
-			return nil
-		},
-	})
+	runtime, err := newHTTPRuntime(config, params.Engine, params.Shutdowner)
+	if err != nil {
+		return err
+	}
+	params.Lifecycle.Append(fx.Hook{OnStart: runtime.start, OnStop: runtime.stop})
+	return nil
 }
 
 func initGinEngine() *gin.Engine {

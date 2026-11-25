@@ -20,7 +20,7 @@ flowchart TD
     H --> K["handleLog() goroutine<br/>range logQueue"]
     K --> L{"wrapper.done != nil?"}
     L -->|"no"| M["wrapper.flush()"]
-    M --> N["format timestamp, go_id,<br/>short logger name, level, message, error"]
+    M --> N["format text or JSON<br/>with timestamp, logger, level, message, error"]
     N --> O["logger output<br/>default: os.Stdout"]
     O --> P["fire matching hooks<br/>with structured fields"]
     P --> R["putLogWrapper()<br/>clear fields and return to pool"]
@@ -63,6 +63,20 @@ sequenceDiagram
 - `Trace`, `Debug`, and `Info` are best effort and may be dropped when the queue is full.
 - `Warn`, `Error`, `Fatal`, and `Panic` block until they are accepted into the queue.
 - Hooks run in the log worker after console output, so accepted logs and their hooks before the barrier complete before `ExitTimeout` returns.
-- Structured fields are delivered to hooks and are not rendered in console output.
+- Structured fields are delivered to hooks. Default text output omits them; optional JSON output preserves them at the top level.
 - Global field fillers run in `StdLogger.wrapper()` before explicit `WithField(s)`, so explicit fields override same-key global fields.
 - Multiple global field fillers are supported and run in registration order; later fillers win on same-key writes.
+
+## JSON output
+
+Call `log.SetFormat(log.JSONFormat)` before application startup to emit one JSON
+record per line. `log.TextFormat` is the default and keeps the existing text format.
+JSON includes `time`, `level`, `msg`, `logger_name`, `go_id`, an optional `error`, and
+structured fields such as `stage`, `order_id`, and `action`. The metadata names are
+reserved; other fields stay at the top level. Error-valued fields become strings.
+Encoding errors are reported to stderr.
+
+The selected formatter replaces the normal output; it does not add a second log
+write. Existing hooks still run after output and receive the full `Entry`. Do not
+use a hook to duplicate the same JSON record to stdout. Output destinations, queue
+admission, and the exit barrier keep their existing behavior.

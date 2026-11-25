@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/real-uangi/allingo/common/env"
 	"github.com/real-uangi/allingo/common/log"
 )
@@ -25,27 +24,25 @@ type Manager struct {
 }
 
 func NewManager(endpoint string, bucketName string) (*Manager, error) {
-	m := &Manager{
-		logger: log.For[Manager](),
-		bucket: bucketName,
-	}
-	m.logger.Infof("initializing minio client")
-
-	options := minio.Options{
-		Creds:  credentials.NewStaticV4(env.Get("MINIO_ID"), env.Get("MINIO_SECRET"), env.Get("MINIO_TOKEN")),
-		Secure: false,
+	logger := log.For[Manager]()
+	logger.Infof("initializing minio client")
+	minioClient, err := NewClient(ClientConfig{
+		Endpoint:     endpoint,
+		AccessKey:    env.Get("MINIO_ID"),
+		SecretKey:    env.Get("MINIO_SECRET"),
+		SessionToken: env.Get("MINIO_TOKEN"),
+		Secure:       false,
 		Transport: &http.Transport{
 			Proxy:             nil,
 			DisableKeepAlives: false,
 			MaxIdleConns:      10,
 			IdleConnTimeout:   180 * time.Second,
 		},
-	}
-	minioClient, err := minio.New(endpoint, &options)
+	})
 	if err != nil {
 		return nil, err
 	}
-	m.client = minioClient
+	m := NewManagerWithClient(minioClient, bucketName)
 	m.logger.Infof("minio client connected to %s", endpoint)
 	exist, err := m.client.BucketExists(context.Background(), m.bucket)
 	if err != nil {
@@ -55,6 +52,12 @@ func NewManager(endpoint string, bucketName string) (*Manager, error) {
 		m.logger.Warnf("minio bucket %s doesn't exist", bucketName)
 	}
 	return m, nil
+}
+
+// NewManagerWithClient binds convenience operations to a bucket without
+// checking the bucket or taking ownership of the shared client.
+func NewManagerWithClient(client *minio.Client, bucketName string) *Manager {
+	return &Manager{client: client, logger: log.For[Manager](), bucket: bucketName}
 }
 
 func (m *Manager) GetClient() *minio.Client {
